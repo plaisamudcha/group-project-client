@@ -4,10 +4,12 @@ import AdminRouter from "./AdminRouter";
 import EmployeeRouter from "./EmployeeRouter";
 import PublicRouter from "./PublicRouter";
 import useUserStore from "../stores/useUserStore";
+import { jwtDecode } from "jwt-decode";
 
 function AppRouter() {
-  const user = useUserStore((state) => state.user);
-  const userRole = user?.role || "PUBLIC"; // This should be dynamically set based on user authentication
+  const accessToken = useUserStore((state) => state.accessToken);
+  const decode = accessToken? jwtDecode(accessToken) : null; 
+  const userRole = decode?.role; 
   const finalRouter =
     userRole === "HR"
       ? AdminRouter
@@ -23,7 +25,7 @@ function AppRouter() {
         </div>
       }
     >
-      <RouterProvider key={user?.id} router={finalRouter} />
+      <RouterProvider key={userRole} router={finalRouter} />
     </Suspense>
   );
 }
