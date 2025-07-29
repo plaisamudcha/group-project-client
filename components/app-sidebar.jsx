@@ -15,6 +15,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import useUserStore from "@/src/stores/useUserStore.js"
+import { Link } from "react-router"
 
 // This is sample data.
 const adminMenu = {
@@ -30,7 +31,7 @@ const adminMenu = {
         },
         {
           title: "User Management",
-          url: "/admin/management",
+          url: "/admin/users-management",
         },
         {
           title: "Attendance",
@@ -116,8 +117,9 @@ export function AppSidebar({
   return (
     <Sidebar {...props}>
       <SidebarHeader>
+        <p className="font-extrabold text-blue-900 text-2xl text-center">PERSIST COMPANY</p>
         {/* <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} /> */}
-        <SearchForm />
+        {/* <SearchForm /> */}
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
@@ -129,7 +131,7 @@ export function AppSidebar({
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
+                      <Link to={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
