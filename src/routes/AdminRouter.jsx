@@ -48,7 +48,7 @@ const AdminRouter = createBrowserRouter([
         Component: RegisterEmployeePage,
       },
       {
-        path: "users",
+        path: "users-management",
         Component: UserManagementPage,
       },
       {
