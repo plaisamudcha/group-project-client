@@ -58,7 +58,8 @@ function HolidayManagementPage() {
         setIsLoading(true);
         setError(null); 
         const response = await admintoApi.fetchAllholiday();
-        setHolidays(response.data);
+        // console.log(response.data.holiday)
+        setHolidays(response.data.holiday);
       } catch (err) {
         console.error("Failed to fetch holidays:", err);
         setError("ไม่สามารถโหลดข้อมูลวันหยุดได้"); 
