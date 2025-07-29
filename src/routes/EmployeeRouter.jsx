@@ -25,7 +25,7 @@ const GoToHomePage = lazy(() => import("../pages/GoToHomePage"));
 
 const EmployeeRouter = createBrowserRouter([
   {
-    path: "/",
+    path: "employee",
     Component: EmployeeLayout,
     children: [
       {

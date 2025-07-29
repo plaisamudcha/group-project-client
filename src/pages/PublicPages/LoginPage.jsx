@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { yupResolver } from "@hookform/resolvers/yup";
 import authSchema from "../../validations/authSchema";
 import { toast } from "react-toastify";
@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import ForgotPasswordPage from "./ForgotPassworkPage";
 
 function LoginPage() {
+  const navigate = useNavigate();
   const [resetForm, setResetForm] = useState(false);
   const login = useUserStore((state) => state.login);
 
@@ -37,6 +38,11 @@ function LoginPage() {
       const res = await login(data);
       reset();
       toast.success(res.data.message);
+      if (res.data.user.role === "HR") {
+        navigate("/admin");
+      } else if (res.data.user.role === "EMPLOYEE") {
+        navigate("/employee");
+      }
     } catch (error) {
       const errMsg = error?.response?.data?.error || error.message;
       toast.error(errMsg);

@@ -23,7 +23,7 @@ function AppRouter() {
         </div>
       }
     >
-      <RouterProvider router={finalRouter} />
+      <RouterProvider key={user?.id} router={finalRouter} />
     </Suspense>
   );
 }

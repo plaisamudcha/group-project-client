@@ -32,7 +32,7 @@ const GoToHomePage = lazy(() => import("../pages/GoToHomePage"));
 
 const AdminRouter = createBrowserRouter([
   {
-    path: "/",
+    path: "admin",
     Component: AdminLayout,
     children: [
       {
