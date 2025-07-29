@@ -56,11 +56,11 @@ const EmployeeRouter = createBrowserRouter([
         path: "holidays",
         Component: CompanyHolidayPage,
       },
-      {
-        path: "*",
-        Component: GoToHomePage,
-      },
     ],
+  },
+  {
+    path: "*",
+    Component: GoToHomePage,
   },
 ]);
 

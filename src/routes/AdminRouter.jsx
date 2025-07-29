@@ -48,7 +48,7 @@ const AdminRouter = createBrowserRouter([
         Component: RegisterEmployeePage,
       },
       {
-        path: "users",
+        path: "users-management",
         Component: UserManagementPage,
       },
       {
@@ -79,11 +79,11 @@ const AdminRouter = createBrowserRouter([
         path: "audit-logs",
         Component: AuditLogPage,
       },
-      {
-        path: "*",
-        Component: GoToHomePage,
-      },
     ],
+  },
+  {
+    path: "*",
+    Component: GoToHomePage,
   },
 ]);
 

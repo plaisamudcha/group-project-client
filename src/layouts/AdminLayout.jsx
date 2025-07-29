@@ -1,19 +1,14 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/app-sidebar.jsx";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { Outlet } from "react-router";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
 function AdminLayout() {
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full">
-        <SidebarTrigger />
-        <Outlet />
-      </main>
-    </SidebarProvider>
-
-
-
+      <AppSidebar/>
+      <SidebarTrigger/>
+      <Outlet/>
+    </SidebarProvider> 
   );
 }
 export default AdminLayout;
