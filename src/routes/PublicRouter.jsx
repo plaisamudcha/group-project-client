@@ -24,11 +24,11 @@ const PublicRouter = createBrowserRouter([
         path: "reset-password/:token",
         Component: ResetPage,
       },
-      {
-        path: "*",
-        Component: GoToHomePage,
-      },
     ],
+  },
+  {
+    path: "*",
+    Component: GoToHomePage,
   },
 ]);
 
