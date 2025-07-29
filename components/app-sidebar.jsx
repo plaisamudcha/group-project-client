@@ -1,69 +1,144 @@
-// import * as React from "react"
+import * as React from "react"
 
-// import { SearchForm } from "@/components/search-form"
-// import { VersionSwitcher } from "@/components/version-switcher"
-// import {
-//   Sidebar,
-//   SidebarContent,
-//   SidebarGroup,
-//   SidebarGroupContent,
-//   SidebarGroupLabel,
-//   SidebarHeader,
-//   SidebarMenu,
-//   SidebarMenuButton,
-//   SidebarMenuItem,
-//   SidebarRail,
-// } from "@/components/ui/sidebar"
+import { SearchForm } from "@/components/search-form"
+import { VersionSwitcher } from "@/components/version-switcher"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import useUserStore from "@/src/stores/useUserStore.js"
 
-// // This is sample data.
-// const adminMenu = {
-//   // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-//   navMain: [
-//     {
-//       url: "#",
-//       items: [
-//         {
-//           title: "",
-//           url: "#",
-//         },
-//         {
-//           title: "Project Structure",
-//           url: "#",
-//         },
-//       ],
-//     },
-//   ],
-// }
+// This is sample data.
+const adminMenu = {
+  // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  navMain: [
+    {
+      title: 'AdminMenu',
+      url: "#",
+      items: [
+        {
+          title: "Dashboard",
+          url: "/admin/dashboard",
+        },
+        {
+          title: "User Management",
+          url: "/admin/management",
+        },
+        {
+          title: "Attendance",
+          url: "/admin/attendance",
+        },
+        {
+          title: "Leave Requests",
+          url: "/admin/leave-requests",
+        },
+        {
+          title: "Leave Entitlements",
+          url: "/admin/leave-entitlements",
+        },
+        {
+          title: "Work Policy Management",
+          url: "/admin/work-policies",
+        },
+        {
+          title: "Shift Management",
+          url: "/admin/shifts",
+        },
+        {
+          title: "Audit log",
+          url: "/admin/audit-logs",
+        },
+      ],
+    },
+  ],
+}
 
-// export function AppSidebar({
-//   ...props
-// }) {
-//   return (
-//     <Sidebar {...props}>
-//       <SidebarHeader>
-//         {/* <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} /> */}
-//         <SearchForm />
-//       </SidebarHeader>
-//       <SidebarContent>
-//         {/* We create a SidebarGroup for each parent. */}
-//         {data.navMain.map((item) => (
-//           <SidebarGroup key={item.title}>
-//             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-//             <SidebarGroupContent>
-//               <SidebarMenu>
-//                 {item.items.map((item) => (
-//                   <SidebarMenuItem key={item.title}>
-//                     <SidebarMenuButton asChild isActive={item.isActive}>
-//                       <a href={item.url}>{item.title}</a>
-//                     </SidebarMenuButton>
-//                   </SidebarMenuItem>
-//                 ))}
-//               </SidebarMenu>
-//             </SidebarGroupContent>
-//           </SidebarGroup>
-//         ))}
-//       </SidebarContent>
-//       <SidebarRail />
-//     </Sidebar>
-//   );
-// }
+const employeeMenu = {
+  // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  navMain: [
+    {
+      title: 'Employee Menu',
+      url: "#",
+      items: [
+        {
+          title: "Dashboard",
+          url: "/employee/dashboard",
+        },
+        {
+          title: "My Profile",
+          url: "/employee/profile",
+        },
+        {
+          title: "My Attendance",
+          url: "/employee/attendance",
+        },
+        {
+          title: "Request Leave",
+          url: "/employee/request-leave",
+        },
+        {
+          title: "My Leave Request",
+          url: "/employee/leave-requests",
+        },
+        {
+          title: "Leave Entitlement",
+          url: "/employee/entitlement",
+        },
+        {
+          title: "Company Holidays",
+          url: "/employee/holidays",
+        },
+      ],
+    },
+  ],
+}
+
+export function AppSidebar({
+  ...props
+}) {
+  const user = useUserStore((state) => state.user);
+  const userRole = user?.role ; 
+  const finalMenuList =
+    userRole === "HR"
+      ? adminMenu
+      : userRole === "EMPLOYEE"
+      ? employeeMenu
+      : null;
+
+  return (
+    <Sidebar {...props}>
+      <SidebarHeader>
+        {/* <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} /> */}
+        <SearchForm />
+      </SidebarHeader>
+      <SidebarContent>
+        {/* We create a SidebarGroup for each parent. */}
+        {finalMenuList.navMain.map((item) => (
+          <SidebarGroup key={item.title}>
+            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {item.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={item.isActive}>
+                      <a href={item.url}>{item.title}</a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  );
+}
