@@ -1,8 +1,14 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Clock, XCircle, FileText } from "lucide-react";
+import { Clock, XCircle, FileText, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import employeeApi from "@/src/api/employeeApi";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CardDescription } from "@/components/ui/card";
+import { CardTitle } from "@/components/ui/card";
+import { CheckCircle } from "lucide-react";
 
 
 function MyLeaveRequestPage() {
@@ -62,7 +68,7 @@ function MyLeaveRequestPage() {
 
   // คอมโพเนนต์ต้อง return JSX ออกมา
   return (
-        <Card className="animate-fade-in">
+        <Card className="w-150 animate-fade-in">
             <CardHeader>
                 <CardTitle className="flex items-center"><FileText className="mr-2 h-5 w-5" />ประวัติการลา</CardTitle>
                 <CardDescription>ตรวจสอบสถานะใบลาที่เคยยื่นทั้งหมด</CardDescription>
@@ -80,7 +86,7 @@ function MyLeaveRequestPage() {
                     <TableBody>
                         {requests.length > 0 ? requests.map((req) => (
                             <TableRow key={req.id}>
-                                <TableCell className="font-medium">{req.type}</TableCell>
+                                <TableCell className="font-medium">{req.leaveType}</TableCell>
                                 <TableCell>{new Date(req.startDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
                                 <TableCell>{new Date(req.endDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
                                 <TableCell className="text-right">{getStatusBadge(req.status)}</TableCell>
