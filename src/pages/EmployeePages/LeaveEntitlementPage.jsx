@@ -1,9 +1,18 @@
-import employeeApi from "@/src/api/employeeApi";
-import { Card, CardHeader, CardTitle, ErrorMessage, LoadingSpinner, Progress } from "@/src/components/SianUi";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import employeeApi from '@/api/employeeApi'; // สมมติว่า path นี้ถูกต้อง
+
+// =======================================================================
+// FILE: src/pages/EmployeePages/LeaveEntitlementPage.jsx
+// =======================================================================
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
+
 
 function LeaveEntitlementPage() {
-   const [entitlements, setEntitlements] = useState([]);
+    const [entitlements, setEntitlements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -14,42 +23,60 @@ function LeaveEntitlementPage() {
             const response = await employeeApi.getLeaveEntitlements();
             setEntitlements(response.data);
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.message || "ไม่สามารถโหลดข้อมูลได้");
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const renderContent = () => {
-        if (isLoading) return <LoadingSpinner />;
-        if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
-        if (!entitlements || entitlements.length === 0) return <p className="text-center text-muted-foreground p-8">ไม่พบข้อมูลสิทธิ์วันลา</p>;
+    if (isLoading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {entitlements.map((item, index) => {
-                    const remaining = item.total - item.used;
-                    const percentage = item.total > 0 ? (remaining / item.total) * 100 : 0;
-                    return (
-                        <Card key={index}>
-                            <CardHeader><CardTitle className="text-base">{item.type}</CardTitle></CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold text-card-foreground">{remaining}<span className="text-base font-normal text-muted-foreground"> / {item.total} วัน</span></p>
-                                <Progress value={percentage} className="mt-2 h-1.5" />
-                                <p className="text-xs text-muted-foreground mt-2">ใช้ไปแล้ว {item.used} วัน</p>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader>
+                            <Skeleton className="h-5 w-2/4" />
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <Skeleton className="h-8 w-1/2" />
+                            <Skeleton className="h-2 w-full" />
+                            <Skeleton className="h-4 w-1/3" />
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
         );
-    };
-  return (
-     <Card className="w-full max-w-4xl animate-fade-in">
-            <CardHeader><CardTitle className="flex items-center text-xl"><Home className="mr-3 text-primary" />สิทธิ์วันลาคงเหลือ</CardTitle><CardDescription>สรุปสิทธิ์วันลาคงเหลือประจำปีของคุณ</CardDescription></CardHeader>
-            <CardContent>{renderContent()}</CardContent>
-        </Card>
-  )
+    }
+
+    if (error) {
+        return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>เกิดข้อผิดพลาด!</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
+    }
+       return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+            {entitlements.map((item, index) => {
+                const remaining = item.total - item.used;
+                const percentage = item.total > 0 ? ((item.used / item.total)) * 100 : 0;
+                return (
+                    <Card key={index}>
+                        <CardHeader>
+                            <CardTitle className="text-lg font-medium">{item.type}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-4xl font-bold">
+                                {remaining}
+                                <span className="text-lg font-normal text-muted-foreground"> / {item.total} วัน</span>
+                            </p>
+                            <Progress value={percentage} className="mt-4" />
+                            <p className="text-xs text-muted-foreground mt-2">ใช้ไปแล้ว {item.used} วัน</p>
+                        </CardContent>
+                    </Card>
+                );
+            })}
+        </div>
+    );
 }
 export default LeaveEntitlementPage;
