@@ -13,7 +13,7 @@ const privateApi = axios.create(baseConfig);
 
 privateApi.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = useUserStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

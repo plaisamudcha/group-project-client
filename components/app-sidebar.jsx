@@ -14,133 +14,88 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import useUserStore from "@/src/stores/useUserStore.js"
+import { Link } from "react-router"
 
 // This is sample data.
-const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+const adminMenu = {
+  // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
     {
-      title: "Getting Started",
+      title: 'AdminMenu',
       url: "#",
       items: [
         {
-          title: "Installation",
-          url: "#",
+          title: "Dashboard",
+          url: "/admin/dashboard",
         },
         {
-          title: "Project Structure",
-          url: "#",
+          title: "User Management",
+          url: "/admin/users-management",
+        },
+        {
+          title: "Attendance",
+          url: "/admin/attendance",
+        },
+        {
+          title: "Leave Requests",
+          url: "/admin/leave-requests",
+        },
+        {
+          title: "Leave Entitlements",
+          url: "/admin/leave-entitlements",
+        },
+        {
+          title: "Work Policy Management",
+          url: "/admin/work-policies",
+        },
+        {
+          title: "Shift Management",
+          url: "/admin/shifts",
+        },
+        {
+          title: "Audit log",
+          url: "/admin/audit-logs",
         },
       ],
     },
+  ],
+}
+
+const employeeMenu = {
+  // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
+  navMain: [
     {
-      title: "Building Your Application",
+      title: 'Employee Menu',
       url: "#",
       items: [
         {
-          title: "Routing",
-          url: "#",
+          title: "Dashboard",
+          url: "/employee/dashboard",
         },
         {
-          title: "Data Fetching",
-          url: "#",
-          isActive: true,
+          title: "My Profile",
+          url: "/employee/profile",
         },
         {
-          title: "Rendering",
-          url: "#",
+          title: "My Attendance",
+          url: "/employee/attendance",
         },
         {
-          title: "Caching",
-          url: "#",
+          title: "Request Leave",
+          url: "/employee/request-leave",
         },
         {
-          title: "Styling",
-          url: "#",
+          title: "My Leave Request",
+          url: "/employee/leave-requests",
         },
         {
-          title: "Optimizing",
-          url: "#",
+          title: "Leave Entitlement",
+          url: "/employee/entitlement",
         },
         {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "API Reference",
-      url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Architecture",
-      url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
+          title: "Company Holidays",
+          url: "/employee/holidays",
         },
       ],
     },
@@ -150,15 +105,25 @@ const data = {
 export function AppSidebar({
   ...props
 }) {
+  const user = useUserStore((state) => state.user);
+  const userRole = user?.role ; 
+  const finalMenuList =
+    userRole === "HR"
+      ? adminMenu
+      : userRole === "EMPLOYEE"
+      ? employeeMenu
+      : null;
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} />
-        <SearchForm />
+        <p className="font-extrabold text-blue-900 text-2xl text-center">PERSIST COMPANY</p>
+        {/* <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} /> */}
+        {/* <SearchForm /> */}
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
+        {finalMenuList.navMain.map((item) => (
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -166,7 +131,7 @@ export function AppSidebar({
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
+                      <Link to={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
