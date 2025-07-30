@@ -15,7 +15,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import useUserStore from "@/src/stores/useUserStore.js"
-import { Link } from "react-router"
+import { Link, useLocation } from "react-router"
 
 // This is sample data.
 const adminMenu = {
@@ -71,7 +71,7 @@ const employeeMenu = {
       items: [
         {
           title: "Dashboard",
-          url: "/employee/dashboard",
+          url: "/employee",
         },
         {
           title: "My Profile",
@@ -106,7 +106,11 @@ export function AppSidebar({
   ...props
 }) {
   const user = useUserStore((state) => state.user);
-  const userRole = user?.role ; 
+  // <--- ไฮไลท์: 3. เรียกใช้ useLocation เพื่อเข้าถึง path ปัจจุบัน
+  const location = useLocation(); 
+  
+  // <--- ไฮไลท์: 4. เพิ่มค่าเริ่มต้นให้ userRole เป็น "EMPLOYEE" เพื่อให้ทดสอบ UI ได้ง่ายขึ้น
+  const userRole = user?.role || "EMPLOYEE";
   const finalMenuList =
     userRole === "HR"
       ? adminMenu
@@ -130,7 +134,7 @@ export function AppSidebar({
               <SidebarMenu>
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
+                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                       <Link to={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
