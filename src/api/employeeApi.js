@@ -1,20 +1,9 @@
-import axios from "axios";
-import useUserStore from "../stores/useUserStore";
+import { privateApi } from "./baseApi";
 
-const employeeApi = axios.create({
-  baseURL: `http://localhost:3000/api/profiles`, 
-});
-
-
-employeeApi.interceptors.request.use(
-  (config) => {
-    const token = useUserStore.getState().accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+const employeeApi = {
+  getProfile: (userId) => {
+    return privateApi.get(`/profiles/${userId}`);
   },
-  (error) => Promise.reject(error)
-);
+}
 
 export default employeeApi;
