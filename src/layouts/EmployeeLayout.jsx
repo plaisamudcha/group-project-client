@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { Outlet, useNavigate } from "react-router";
+import { useUserStore } from "@/stores/userStore";
 // import { UserNavi } from "../components/user-nav"; // <-- 1. Import คอมโพเนนต์ใหม่
 
 function EmployeeLayout() {
