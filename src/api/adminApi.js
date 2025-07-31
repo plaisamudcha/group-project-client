@@ -13,6 +13,17 @@ const admintoApi = {
     return privateApi.put(`/holidays/${id}`, body);
   },getAllUser:()=>{
     return privateApi.get('/users')
+  },createEntitlements: (payload) => {
+    return privateApi.post('/aunnual-leave/create', payload);
+  },
+    updateEntitlements: (payload) => {
+    return privateApi.post('/aunnual-leave/create', payload);
+  },
+  createBulkEntitlements: (payload) => {
+    return privateApi.post('/aunnual-leave/createbulk', payload);
+  },
+  deleteUserEntitlements: (userId, year) => {
+    return privateApi.delete(`/aunnual-leave/user/${userId}/year/${year}`);
   }
 };
 
