@@ -5,12 +5,12 @@ import { Outlet } from "react-router";
 function AdminLayout() {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar/>
       <main className="w-full">
-        <SidebarTrigger />
-        <Outlet />
+      <SidebarTrigger/>
+      <Outlet/>
       </main>
-    </SidebarProvider>
+    </SidebarProvider> 
   );
 }
 export default AdminLayout;
