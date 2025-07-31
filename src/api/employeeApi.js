@@ -5,10 +5,18 @@ const employeeApi = {
     return privateApi.get(`/profiles/${userId}`);
   },
 
+  getAttendance: (userId, month, year) => {
+    return privateApi.get(`/attendances/${userId}`, {
+      params: { month, year },
+    });
+  },
+
+
   postLeaveRequest: (leaveData) => privateApi.post('/leaves', leaveData),
   getLeaveRequests: () => privateApi.get('/leaves/user'),
   getLeaveEntitlements: () => privateApi.get('/aunnual-leave/user'),
   getHolidays: () => privateApi.get('/holidays'),
 };
+
 
 export default employeeApi;

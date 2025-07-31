@@ -19,7 +19,7 @@ function ProfilePage() {
         .getProfile(user.id)
         .then((res) => {
           console.log("Profile API response:", res.data);
-          setProfile(res.data.employeeProfile || res.data);  // <--- แบบปลอดภัย
+          setProfile(res.data.employeeProfile || res.data);
         })
         .catch((err) => {
           console.error("Profile fetch error:", err);
