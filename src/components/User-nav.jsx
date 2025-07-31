@@ -29,8 +29,8 @@ export function UserNav() {
     <div className="ml-auto">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10 hover:cursor-pointer hover:opacity-80">
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full cursor-pointer hover:opacity-80">
+            <Avatar className="h-10 w-10">
               <AvatarImage src={user?.profileImage} alt="User Avatar" />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
