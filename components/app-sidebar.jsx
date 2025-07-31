@@ -135,11 +135,11 @@ export function AppSidebar({
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu >
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                      <Link to={item.url}>{item.title}</Link>
+                   <SidebarMenuButton className={'hover:scale-105 hover:font-bold duration-100 transition-all'} asChild isActive={location.pathname === item.url}>
+                      <Link  to={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
