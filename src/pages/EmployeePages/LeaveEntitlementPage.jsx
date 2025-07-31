@@ -20,6 +20,8 @@ function LeaveEntitlementPage() {
         'SICK': 'วันลาป่วย',
         'PERSONAL': 'วันลากิจ',
         'VACATION': 'วันลาพักร้อน',
+        'MATERNITY': 'วันลาคลอด',
+        'UNPAID': 'วันลางานไม่รับเงินเดือน',
     };
     return leaveTypes[type] || type;
 };
