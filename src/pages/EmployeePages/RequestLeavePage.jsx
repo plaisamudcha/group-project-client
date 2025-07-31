@@ -155,11 +155,15 @@ function RequestLeavePage() {
                     <div className="space-y-2">
                         <Label htmlFor="leaveType">ประเภทการลา</Label>
                         <Select name="leaveType" required>
-                            <option value="VACATION">วันลาพักร้อน</option>
-                            <option value="PERSONAL">วันลากิจ</option>
-                            <option value="SICK">วันลาป่วย</option>
-                            <option value="MATERNITY">ลาคลอด</option>
-                            <option value="UNPAID">ลางานโดยไม่รับค่าจ้าง</option>
+                            <SelectTrigger id="leaveType"><SelectValue placeholder="เลือกประเภทการลา" /></SelectTrigger>
+                            <SelectContent>
+                                {/* <--- ไฮไลท์: แก้ไขค่า value ให้ตรงกับที่ Backend ต้องการ --- */}
+                                <SelectItem value="VACATION">วันลาพักร้อน</SelectItem>
+                                <SelectItem value="PERSONAL">วันลากิจ</SelectItem>
+                                <SelectItem value="SICK">วันลาป่วย</SelectItem>
+                                <SelectItem value="MATERNITY">ลาคลอด</SelectItem>
+                                <SelectItem value="UNPAID">วันลางานไม่รับเงินเดือน</SelectItem>
+                            </SelectContent>
                         </Select>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
