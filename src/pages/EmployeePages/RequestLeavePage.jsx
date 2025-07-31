@@ -104,6 +104,8 @@ function RequestLeavePage() {
                                 <SelectItem value="VACATION">วันลาพักร้อน</SelectItem>
                                 <SelectItem value="PERSONAL">วันลากิจ</SelectItem>
                                 <SelectItem value="SICK">วันลาป่วย</SelectItem>
+                                <SelectItem value="MATERNITY">ลาคลอด</SelectItem>
+                                <SelectItem value="UNPAID">วันลางานไม่รับเงินเดือน</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
