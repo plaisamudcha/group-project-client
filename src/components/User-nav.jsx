@@ -30,7 +30,7 @@ export function UserNav() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 hover:cursor-pointer hover:opacity-80">
               <AvatarImage src={user?.profileImage} alt="User Avatar" />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
