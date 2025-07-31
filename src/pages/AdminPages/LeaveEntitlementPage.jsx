@@ -41,6 +41,7 @@ import admintoApi from "@/src/api/adminApi";
 import { Loader2, Pencil, PlusCircle, Trash2, Users, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from 'react-toastify';
 
 // การกำหนดประเภทการลาแบบรวมศูนย์
 const LEAVE_TYPES = {
@@ -65,64 +66,64 @@ function LeaveEntitlementPage() {
   const [toDelete, setToDelete] = useState(null);
   
   const [editingEntitlement, setEditingEntitlement] = useState(null);
-  const [newEmployeeName, setNewEmployeeName] = useState("");
   const [formState, setFormState] = useState({});
   const [bulkFormState, setBulkFormState] = useState({
-      VACATION: 10,
-      PERSONAL: 7,
+      VACATION: 14,
+      PERSONAL: 14,
       SICK: 30,
       MATERNITY: 90,
-      UNPAID: 5,
+      UNPAID: 90,
   });
 
-  // ดึงและแปลงข้อมูลเมื่อ component ถูก mount หรือเมื่อมีการเปลี่ยนปี
+  const [eligibleUsers, setEligibleUsers] = useState([]);
+  const [selectedNewUserId, setSelectedNewUserId] = useState("");
+
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await admintoApi.getAllUser();
+      const users = response.data.users;
+      console.log(users);
+
+      const processedData = users.map(user => {
+        const userEntitlements = user.annualLeaveEntitlements || [];
+        const entitlementsForYear = userEntitlements.filter(e => e.year === parseInt(selectedYear));
+        const leaves = entitlementsForYear.length > 0
+          ? Object.keys(LEAVE_TYPES).map(leaveKey => {
+              const entitlement = entitlementsForYear.find(e => e.leaveType === leaveKey);
+              return {
+                type: leaveKey,
+                used: entitlement?.usedDays || 0,
+                total: entitlement?.entitledDays || 0,
+              };
+            })
+          : [];
+
+        return {
+          id: user.id,
+          employeeName: user.name,
+          year: parseInt(selectedYear),
+          leaves: leaves,
+        };
+      });
+      setEntitlements(processedData);
+
+      const usersWithoutQuota = processedData.filter(user => user.leaves.length === 0);
+      setEligibleUsers(usersWithoutQuota);
+
+    } catch (error) {
+      console.error("ไม่สามารถดึงข้อมูลโควต้าได้:", error);
+      setError("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
+      setEntitlements([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await admintoApi.getAllUser();
-        const users = response.data.users;
-        console.log(users)
-        // ประมวลผลข้อมูลผู้ใช้ที่ได้รับจาก API ตามโครงสร้างใหม่
-        const processedData = users.map(user => {
-          // ตรวจสอบว่ามีข้อมูล annualLeaveEntitlements หรือไม่
-          const userEntitlements = user.annualLeaveEntitlements || [];
-          
-          // กรองข้อมูลการลาเฉพาะปีที่เลือก
-          const entitlementsForYear = userEntitlements.filter(e => e.year === parseInt(selectedYear));
-
-          // แปลงข้อมูลการลาให้อยู่ในรูปแบบที่ UI ต้องการ
-          const leaves = entitlementsForYear.length > 0
-            ? Object.keys(LEAVE_TYPES).map(leaveKey => {
-                const entitlement = entitlementsForYear.find(e => e.leaveType === leaveKey);
-                return {
-                  type: leaveKey,
-                  used: entitlement?.usedDays || 0,
-                  total: entitlement?.entitledDays || 0,
-                };
-              })
-            : [];
-
-          return {
-            id: user.id,
-            employeeName: user.name,
-            year: parseInt(selectedYear),
-            leaves: leaves,
-          };
-        });
-
-        setEntitlements(processedData);
-
-      } catch (error) {
-        console.error("ไม่สามารถดึงข้อมูลโควต้าได้:", error);
-        setError("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
-        setEntitlements([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
   const pendingEmployeesCount = entitlements.filter(e => e.leaves.length === 0).length;
@@ -133,7 +134,7 @@ function LeaveEntitlementPage() {
 
   const handleOpenSingleDialog = (entitlement = null) => {
     setEditingEntitlement(entitlement);
-    setNewEmployeeName("");
+    setSelectedNewUserId("");
     const initialFormState = Object.keys(LEAVE_TYPES).reduce((acc, key) => {
       const existingLeave = (entitlement && entitlement.leaves.length > 0) ? getLeaveData(entitlement.leaves, key) : { total: bulkFormState[key] || 0 };
       acc[key] = existingLeave.total;
@@ -148,32 +149,44 @@ function LeaveEntitlementPage() {
   };
 
   const handleSave = async () => {
-    if (!editingEntitlement && !newEmployeeName.trim()) {
-        alert("กรุณาใส่ชื่อพนักงาน");
+    const isEditing = !!editingEntitlement;
+    
+    if (!isEditing && !selectedNewUserId) {
+        toast.warn("กรุณาเลือกพนักงาน");
         return;
     }
-    const newLeaves = Object.entries(formState).map(([type, total]) => {
-        const existingLeave = (editingEntitlement && editingEntitlement.leaves.length > 0) ? getLeaveData(editingEntitlement.leaves, type) : { used: 0 };
-        return { type, total, used: existingLeave.used };
-    });
-    const isEditing = !!editingEntitlement;
-    const saveData = {
-        id: isEditing ? editingEntitlement.id : Date.now(),
-        employeeName: isEditing ? editingEntitlement.employeeName : newEmployeeName,
-        year: parseInt(selectedYear),
-        leaves: newLeaves,
-    };
-    
-    // --- TODO: เพิ่มการเรียก API สำหรับบันทึกข้อมูล ---
 
-    if (isEditing) {
-        setEntitlements(prev => prev.map(e => e.id === saveData.id ? saveData : e));
-    } else {
-        setEntitlements(prev => [...prev, saveData]);
+    const entitlementsPayload = Object.entries(formState).map(([leaveType, entitledDays]) => ({
+        leaveType,
+        entitledDays: Number(entitledDays),
+    }));
+
+    const payload = {
+        userId: isEditing ? editingEntitlement.id : parseInt(selectedNewUserId),
+        year: parseInt(selectedYear),
+        entitlements: entitlementsPayload,
+    };
+
+    try {
+        if (isEditing) {
+            if (editingEntitlement.leaves.length > 0) {
+                await admintoApi.updateEntitlements(payload);
+            } else {
+                await admintoApi.createEntitlements(payload);
+            }
+        } else {
+             await admintoApi.createEntitlements(payload);
+        }
+
+        await loadData();
+        
+        setIsSingleDialog(false);
+        setEditingEntitlement(null);
+        toast.success("บันทึกข้อมูลสำเร็จ!");
+    } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการบันทึก:", err);
+        toast.error("ไม่สามารถบันทึกข้อมูลได้: " + (err.response?.data?.message || err.message));
     }
-    setIsSingleDialog(false);
-    setEditingEntitlement(null);
-    setNewEmployeeName("");
   };
 
   const handleBulkFormChange = (leaveType, value) => {
@@ -183,32 +196,44 @@ function LeaveEntitlementPage() {
   const handleBulkCreate = async () => {
     const employeesToUpdate = entitlements.filter(e => e.leaves.length === 0);
     if (employeesToUpdate.length === 0) {
-        alert("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
-        setIsBulkDialog(false);
+        toast.info("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
         return;
     }
-    const newLeaves = Object.entries(bulkFormState).map(([type, total]) => ({
-        type,
-        total: total,
-        used: 0
+
+    const userIds = employeesToUpdate.map(emp => emp.id);
+    const entitlementsPayload = Object.entries(bulkFormState).map(([leaveType, entitledDays]) => ({
+        leaveType,
+        entitledDays: Number(entitledDays),
     }));
 
-    // --- TODO: เพิ่มการเรียก API สำหรับสร้างข้อมูลแบบกลุ่ม ---
+    const payload = {
+        year: parseInt(selectedYear),
+        userIds: userIds,
+        entitlements: entitlementsPayload,
+    };
 
-    setEntitlements(prev => prev.map(e => {
-        if (e.leaves.length === 0) {
-            return { ...e, leaves: newLeaves };
-        }
-        return e;
-    }));
-    setIsBulkDialog(false);
+    try {
+        await admintoApi.createBulkEntitlements(payload);
+        await loadData();
+        setIsBulkDialog(false);
+        toast.success(`สร้างโควต้าสำหรับพนักงาน ${userIds.length} คนสำเร็จ`);
+    } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการสร้างโควต้าแบบกลุ่ม:", err);
+        toast.error("ไม่สามารถสร้างโควต้าได้: " + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleDelete = async () => {
-    if (toDelete) {
-      // --- TODO: เพิ่มการเรียก API สำหรับลบข้อมูล ---
-      setEntitlements(prev => prev.filter(e => e.id !== toDelete.id));
-      setToDelete(null);
+    if (!toDelete) return;
+
+    try {
+        await admintoApi.deleteUserEntitlements(toDelete.id, toDelete.year);
+        await loadData();
+        setToDelete(null);
+        toast.success("ลบข้อมูลสำเร็จ!");
+    } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการลบ:", err);
+        toast.error("ไม่สามารถลบข้อมูลได้: " + (err.response?.data?.message || err.message));
     }
   };
   
@@ -248,7 +273,7 @@ function LeaveEntitlementPage() {
           </Select>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleOpenSingleDialog()}>
+            <Button variant="outline" onClick={() => handleOpenSingleDialog()} disabled={eligibleUsers.length === 0}>
                 <PlusCircle className="mr-2 h-4 w-4" />เพิ่มรายคน
             </Button>
             <Button onClick={() => setIsBulkDialog(true)}>
@@ -323,13 +348,18 @@ function LeaveEntitlementPage() {
                 {!editingEntitlement && (
                     <div className="flex justify-between items-center">
                         <Label htmlFor="employeeName" className="font-semibold text-base">ชื่อพนักงาน</Label>
-                        <Input 
-                            id="employeeName"
-                            className="basis-2/4"
-                            value={newEmployeeName}
-                            onChange={(e) => setNewEmployeeName(e.target.value)}
-                            placeholder="เช่น นายสมชาย ใจดี"
-                        />
+                        <Select value={selectedNewUserId} onValueChange={setSelectedNewUserId}>
+                            <SelectTrigger className="basis-2/4">
+                                <SelectValue placeholder="เลือกพนักงาน..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {eligibleUsers.map(user => (
+                                    <SelectItem key={user.id} value={String(user.id)}>
+                                        {user.employeeName}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 )}
                 {Object.entries(LEAVE_TYPES).map(([key, name]) => (
@@ -406,7 +436,7 @@ function LeaveEntitlementPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle>
             <AlertDialogDescription>
-              คุณแน่ใจหรือไม่ที่จะลบโควต้าของ {toDelete?.employeeName}? การกระทำนี้ไม่สามารถย้อนกลับได้
+              คุณแน่ใจหรือไม่ที่จะลบโควต้าของ {toDelete?.employeeName} ในปี {toDelete?.year} การกระทำนี้ไม่สามารถย้อนกลับได้
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
