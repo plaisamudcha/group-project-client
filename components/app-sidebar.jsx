@@ -54,6 +54,10 @@ const adminMenu = {
           url: "/admin/shifts",
         },
         {
+          title: "Holidays Management",
+          url: "/admin/holidays",
+        },
+        {
           title: "Audit log",
           url: "/admin/audit-logs",
         },
