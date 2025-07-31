@@ -33,8 +33,9 @@ privateApi.interceptors.response.use(
     if (error?.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const response = await publicApi.get("/auth/refresh-token");
+        const response = await publicApi.post("/auth/refresh-token");
         const newToken = response?.data?.newAccessToken;
+        console.log("Refreshing token:", newToken);
         if (!newToken) {
           return Promise.reject(error);
         }

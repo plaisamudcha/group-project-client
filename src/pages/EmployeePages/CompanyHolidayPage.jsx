@@ -60,31 +60,34 @@ function CompanyHolidayPage() {
     if (error) return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>เกิดข้อผิดพลาด!</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
 
     return (
-       <Card className=" max-w-5xl mx-auto animate-fade-in">
+       <Card className="w-full max-w-5xl mx-auto animate-fade-in">
             <CardHeader><CardTitle>วันหยุดบริษัท</CardTitle><CardDescription>รายการวันหยุดประจำปี</CardDescription></CardHeader>
-            <CardContent>
-                <div className="space-y-8">
-                    {Object.keys(groupedHolidays).length > 0 ? Object.entries(groupedHolidays).map(([month, holidaysInMonth]) => (
-                        <div key={month}>
-                            <h3 className="text-xl font-semibold text-primary mb-4 pb-2 border-b">{month}</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {holidaysInMonth.map((holiday, index) => (
-                                    <div key={index} className="flex items-start space-x-4 rounded-lg border bg-card text-card-foreground p-4 hover:bg-accent hover:text-accent-foreground transition-colors">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <span className="text-2xl font-bold text-primary">{new Date(holiday.date).getDate()}</span>
-                                            <span className="text-xs text-muted-foreground">{new Date(holiday.date).toLocaleString('th-TH', { month: 'short' })}</span>
+            {/* --- FIX: เพิ่ม div ครอบ CardContent เพื่อให้ scroll ได้ --- */}
+            <div className="max-h-[70vh] overflow-y-auto pr-4">
+                <CardContent>
+                    <div className="space-y-8">
+                        {Object.keys(groupedHolidays).length > 0 ? Object.entries(groupedHolidays).map(([month, holidaysInMonth]) => (
+                            <div key={month} >
+                                <h3 className="text-xl font-semibold text-primary mb-4 pb-2 border-b">{month}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {holidaysInMonth.map((holiday, index) => (
+                                        <div key={index} className="flex items-start space-x-4 rounded-lg border bg-card text-card-foreground p-4 hover:bg-accent hover:text-accent-foreground transition-colors">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <span className="text-2xl font-bold text-primary">{new Date(holiday.date).getDate()}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(holiday.date).toLocaleString('th-TH', { month: 'short' })}</span>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{holiday.name}</p>
+                                                <p className="text-sm text-muted-foreground">{new Date(holiday.date).toLocaleString('th-TH', { weekday: 'long' })}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{holiday.name}</p>
-                                            <p className="text-sm text-muted-foreground">{new Date(holiday.date).toLocaleString('th-TH', { weekday: 'long' })}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )) : <p className="text-center text-muted-foreground pt-4">ไม่พบข้อมูลวันหยุด</p>}
-                </div>
-            </CardContent>
+                        )) : <p className="text-center text-muted-foreground pt-4">ไม่พบข้อมูลวันหยุด</p>}
+                    </div>
+                </CardContent>
+            </div>
         </Card>
     );
 }

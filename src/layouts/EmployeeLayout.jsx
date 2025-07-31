@@ -1,18 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { Outlet, useNavigate } from "react-router";
-import useUserStore from "@/src/stores/useUserStore.js";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User } from "lucide-react";
+// import { UserNavi } from "../components/user-nav"; // <-- 1. Import คอมโพเนนต์ใหม่
 
 function EmployeeLayout() {
   const navigate = useNavigate();
@@ -25,7 +14,6 @@ function EmployeeLayout() {
 
   return (
     <SidebarProvider>
-      {/* AppSidebar จะแสดงเมนูตาม Role ของ User ที่ login อยู่ */}
       <AppSidebar />
 
       {/* ส่วนของเนื้อหาหลัก */}
