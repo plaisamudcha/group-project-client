@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
-import { ValidationError } from "yup"; 
+import { ValidationError } from "yup";
 import holidaySchema from "@/src/validations/holidaySchema";
 import {
   Select,
@@ -55,24 +55,24 @@ function HolidayManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [holidayToDelete, setHolidayToDelete] = useState(null);
   const [error, setError] = useState(null);
-   const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const filteredHolidays = holidays.filter(
     (h) => h.date.startsWith(selectedYear)
   );
-   const fetchHolidays = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await admintoApi.fetchAllholiday();
-         const sortedHolidays = response.data.holiday.sort((a, b) => a.date.localeCompare(b.date));
-        setHolidays(sortedHolidays);
-      } catch (err) {
-        console.error("Failed to fetch holidays:", err);
-        setError("ไม่สามารถโหลดข้อมูลวันหยุดได้");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchHolidays = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await admintoApi.fetchAllholiday();
+      const sortedHolidays = response.data.holiday.sort((a, b) => a.date.localeCompare(b.date));
+      setHolidays(sortedHolidays);
+    } catch (err) {
+      console.error("Failed to fetch holidays:", err);
+      setError("ไม่สามารถโหลดข้อมูลวันหยุดได้");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchHolidays();
@@ -80,7 +80,7 @@ function HolidayManagementPage() {
 
 
   const handleAddClick = () => {
-  setEditingHoliday(null);
+    setEditingHoliday(null);
     setHolidayName("");
     setHolidayDate(dayjs(`${selectedYear}-01-01`).format("YYYY-MM-DD"));
     setErrors({});
@@ -88,53 +88,64 @@ function HolidayManagementPage() {
   };
 
   const handleEditClick = (holiday) => {
-     setEditingHoliday(holiday);
+    setEditingHoliday(holiday);
     setHolidayName(holiday.name);
     setHolidayDate(dayjs(holiday.date).format("YYYY-MM-DD"));
-    setErrors({}); 
+    setErrors({});
     setIsDialogOpen(true);
   };
 
-   const handleSave = async () => {
-    const formData = {
-      name: holidayName,
-      date: holidayDate,
-    };
+  const handleSave = async () => {
+  const formDataForValidation = {
+    name: holidayName,
+    date: holidayDate,
+  };
 
-    try {
-      await holidaySchema.createOrUpdateHoliday.validate(formData, {
-        abortEarly: false,
+  try {
+
+    // await holidaySchema.validate(formDataForValidation, {
+    //   abortEarly: false,
+    // });
+    setErrors({}); 
+    if (editingHoliday) {
+      const payload = {
+        name: holidayName,
+      };
+
+      const originalDate = dayjs(editingHoliday.date).format("YYYY-MM-DD");
+
+      if (holidayDate !== originalDate) {
+  
+        payload.date = holidayDate;
+      }
+    
+      await admintoApi.updateHoliday(editingHoliday.id, payload);
+
+    } else {
+      await admintoApi.ceateHoliday({
+        name: holidayName,
+        date: holidayDate,
       });
-      setErrors({});
+    }
 
-      if (editingHoliday) {
-     
-        await admintoApi.updateHoliday(editingHoliday.id, formData);
+    await fetchHolidays();
+    setIsDialogOpen(false);
 
-      } else {
-        
-        await admintoApi.ceateHoliday(formData);
-      }
-
-      
-      await fetchHolidays();
-      setIsDialogOpen(false);
-
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        const newErrors = err.inner.reduce((acc, currentError) => {
-          acc[currentError.path] = currentError.message;
-          return acc;
-        }, {});
-        setErrors(newErrors);
-      } else {
-        console.error("Failed to save holiday:", err);
-        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-      }
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      const newErrors = err.inner.reduce((acc, currentError) => {
+        acc[currentError.path] = currentError.message;
+        return acc;
+      }, {});
+      setErrors(newErrors);
+    } else {
+      console.error("Failed to save holiday:", err);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   }
-  
-   const confirmDelete = async () => {
+};
+
+  const confirmDelete = async () => {
     if (holidayToDelete) {
       try {
         await admintoApi.deleteHoliday(holidayToDelete);
@@ -206,7 +217,7 @@ function HolidayManagementPage() {
                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(holiday)}>
                       <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600"  onClick={() => setHolidayToDelete(holiday.id)}>
+                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => setHolidayToDelete(holiday.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -223,7 +234,7 @@ function HolidayManagementPage() {
         </Table>
       </div>
 
-       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
