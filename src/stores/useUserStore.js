@@ -33,6 +33,7 @@ const useUserStore = create(
       name: "user-storage", // unique name for the storage
       getStorage: () => localStorage, // use localStorage as the storage
     }
+    
   )
 );
 
