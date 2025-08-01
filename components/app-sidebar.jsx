@@ -1,7 +1,7 @@
-import * as React from "react"
+import * as React from "react";
 
-import { SearchForm } from "@/components/search-form"
-import { VersionSwitcher } from "@/components/version-switcher"
+import { SearchForm } from "@/components/search-form";
+import { VersionSwitcher } from "@/components/version-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +13,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import useUserStore from "@/src/stores/useUserStore.js"
-import { Link, useLocation } from "react-router"
+} from "@/components/ui/sidebar";
+import useUserStore from "@/src/stores/useUserStore.js";
+import { Link, useLocation } from "react-router";
 
 // This is sample data.
 const adminMenu = {
   // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
     {
-      title: 'AdminMenu',
+      title: "AdminMenu",
       url: "#",
       items: [
         {
@@ -64,13 +64,13 @@ const adminMenu = {
       ],
     },
   ],
-}
+};
 
 const employeeMenu = {
   // versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
     {
-      title: 'Employee Menu',
+      title: "Employee Menu",
       url: "#",
       items: [
         {
@@ -94,25 +94,19 @@ const employeeMenu = {
           url: "/employee/leave-requests",
         },
         {
-          title: "Leave Entitlement",
-          url: "/employee/entitlement",
-        },
-        {
           title: "Company Holidays",
           url: "/employee/holidays",
         },
       ],
     },
   ],
-}
+};
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
   const user = useUserStore((state) => state.user);
   // <--- ไฮไลท์: 3. เรียกใช้ useLocation เพื่อเข้าถึง path ปัจจุบัน
-  const location = useLocation(); 
-  
+  const location = useLocation();
+
   // <--- ไฮไลท์: 4. เพิ่มค่าเริ่มต้นให้ userRole เป็น "EMPLOYEE" เพื่อให้ทดสอบ UI ได้ง่ายขึ้น
   const userRole = user?.role || "EMPLOYEE";
   const finalMenuList =
@@ -125,7 +119,9 @@ export function AppSidebar({
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <p className="font-extrabold text-blue-900 text-2xl text-center">PERSIST COMPANY</p>
+        <p className="font-extrabold text-blue-900 text-2xl text-center">
+          PERSIST COMPANY
+        </p>
         {/* <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} /> */}
         {/* <SearchForm /> */}
       </SidebarHeader>
@@ -135,11 +131,17 @@ export function AppSidebar({
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu >
+              <SidebarMenu>
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                   <SidebarMenuButton className={'hover:scale-105 hover:font-bold duration-100 transition-all'} asChild isActive={location.pathname === item.url}>
-                      <Link  to={item.url}>{item.title}</Link>
+                    <SidebarMenuButton
+                      className={
+                        "hover:scale-105 hover:font-bold duration-100 transition-all"
+                      }
+                      asChild
+                      isActive={location.pathname === item.url}
+                    >
+                      <Link to={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
