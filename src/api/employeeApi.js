@@ -16,6 +16,7 @@ const employeeApi = {
   getLeaveRequests: () => privateApi.get('/leaves/user'),
   getLeaveEntitlements: () => privateApi.get('/aunnual-leave/user'),
   getHolidays: () => privateApi.get('/holidays'),
+  getMyProfile: (userId) => privateApi.get(`/profiles/${userId}`),
 };
 
 
