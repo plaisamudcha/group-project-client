@@ -24,6 +24,8 @@ const admintoApi = {
   },
   deleteUserEntitlements: (userId, year) => {
     return privateApi.delete(`/aunnual-leave/user/${userId}/year/${year}`);
+  },getAllLeaveRequst:()=>{
+     return privateApi.get("/leaves")
   }
 };
 
