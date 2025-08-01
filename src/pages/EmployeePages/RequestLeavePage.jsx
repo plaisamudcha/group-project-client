@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,22 +15,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, Send, Loader2, AlertTriangle } from "lucide-react";
-import { useEffect, useState } from "react";
-import employeeApi from "@/src/api/employeeApi";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+// --- 👇👇👇 1. เพิ่ม import สำหรับ RadioGroup ---
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+import {
+  CheckCircle,
+  Send,
+  Loader2,
+  AlertTriangle,
+  CalendarIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+
+import employeeApi from "@/src/api/employeeApi";
 import useUserStore from "@/src/stores/useUserStore";
+import { cn } from "@/lib/utils";
 
 function RequestLeavePage() {
   const [status, setStatus] = useState({
@@ -39,120 +46,73 @@ function RequestLeavePage() {
     error: null,
     success: false,
   });
+
   const [holidays, setHolidays] = useState([]);
+  const [workingDays, setWorkingDays] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  {
-    /* --- 👇👇👇 ไฮไลท์: 1. เพิ่ม State สำหรับเก็บวันทำงานของ User --- */
-  }
-  const [workingDays, setWorkingDays] = useState([]);
+
+  // --- 👇👇� 2. เพิ่ม State สำหรับจัดการช่วงเวลาที่ลา (เต็มวัน/ครึ่งวัน) ---
+  const [leaveDuration, setLeaveDuration] = useState("FULL_DAY");
 
   const loggedInUser = useUserStore((state) => state.user);
 
-  {
-    /* --- 👇👇👇 ไฮไลท์: 2. ใช้ useEffect เพื่อดึงข้อมูลวันหยุด และ "วันทำงาน" ของ User --- */
-  }
+  // --- 🌟 แก้ไข: รวม useEffect ที่ซ้ำกันให้เหลืออันเดียว ---
   useEffect(() => {
+    if (!loggedInUser?.id) return;
+
     const fetchData = async () => {
       try {
-        // ดึงข้อมูล 2 อย่างพร้อมกันเพื่อประสิทธิภาพ
         const [holidayRes, profileRes] = await Promise.all([
           employeeApi.getHolidays(),
-          employeeApi.getMyProfile(loggedInUser.id), // ใช้ id จาก store
+          employeeApi.getMyProfile(loggedInUser.id),
         ]);
 
-        // ตั้งค่าวันหยุดบริษัท
         const holidayDates = holidayRes.data.holiday.map(
           (h) => new Date(h.date)
         );
         setHolidays(holidayDates);
 
-        // ตั้งค่่าวันทำงานจาก profile ที่ดึงมาล่าสุด
         if (profileRes.data.workPolicy?.workingDays) {
           setWorkingDays(profileRes.data.workPolicy.workingDays);
         } else {
-          // กรณีไม่พบ workingDays ใน profile ให้ใช้ค่าเริ่มต้นเป็น จ-ศ
           console.warn(
-            "Working days not found in user profile, defaulting to Mon-Fri."
+            "Working days not found, defaulting to Mon-Fri."
           );
-          setWorkingDays([
-            "MONDAY",
-            "TUESDAY",
-            "WEDNESDAY",
-            "THURSDAY",
-            "FRIDAY",
-          ]);
+          setWorkingDays(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]);
         }
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
-        // ตั้งค่าวันทำงานเริ่มต้นหาก API ล้มเหลว
-        setWorkingDays([
-          "MONDAY",
-          "TUESDAY",
-          "WEDNESDAY",
-          "THURSDAY",
-          "FRIDAY",
-        ]);
-      }
-    };
-    if (loggedInUser) fetchData();
-  }, [loggedInUser]);
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!loggedInUser) return; // ถ้ายังไม่มีข้อมูล user ให้หยุดรอ
-
-      try {
-        // ดึงข้อมูล 2 อย่างพร้อมกัน
-        const [holidayRes, profileRes] = await Promise.all([
-          employeeApi.getHolidays(),
-          employeeApi.getMyProfile(loggedInUser.id), // ใช้ id จาก store
-        ]);
-
-        // ตั้งค่าวันหยุด
-        const holidayDates = holidayRes.data.holiday.map(
-          (h) => new Date(h.date)
-        );
-        setHolidays(holidayDates);
-
-        // ตั้งค่่าวันทำงานจาก profile ที่ดึงมา
-        if (profileRes.data.workPolicy?.workingDays) {
-          setWorkingDays(profileRes.data.workPolicy.workingDays);
-        } else {
-          setWorkingDays([
-            "MONDAY",
-            "TUESDAY",
-            "WEDNESDAY",
-            "THURSDAY",
-            "FRIDAY",
-          ]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch initial data:", error);
-        setWorkingDays([
-          "MONDAY",
-          "TUESDAY",
-          "WEDNESDAY",
-          "THURSDAY",
-          "FRIDAY",
-        ]);
+        setWorkingDays(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]);
       }
     };
 
     fetchData();
-  }, [loggedInUser]); // ให้ useEffect ทำงานใหม่เมื่อข้อมูล user ใน store พร้อมใช้งาน
+  }, [loggedInUser]);
+
+  // --- 👇👇👇 3. เพิ่ม useEffect เพื่อจัดการ Logic การลาครึ่งวัน ---
+  // เมื่อเลือก "ลาครึ่งวัน" ให้ตั้งค่า endDate เป็นวันเดียวกับ startDate อัตโนมัติ
+  useEffect(() => {
+    if (leaveDuration !== "FULL_DAY" && startDate) {
+      setEndDate(startDate);
+    }
+  }, [startDate, leaveDuration]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ loading: true, error: null, success: false });
 
     const formData = new FormData(e.target);
+    // --- 👇👇👇 4. เพิ่ม leaveDuration เข้าไปในข้อมูลที่จะส่งไป API ---
     const leaveData = {
       leaveType: formData.get("leaveType"),
       reason: formData.get("reason"),
       startDate: startDate ? format(startDate, "yyyy-MM-dd") : null,
       endDate: endDate ? format(endDate, "yyyy-MM-dd") : null,
-      userId: loggedInUser.id, // ใช้ id จาก store
+      userId: loggedInUser.id,
+      leaveSession: leaveDuration, // ส่งข้อมูลช่วงเวลาที่ลาไปด้วย
     };
+    console.log(leaveData)
 
     if (!leaveData.startDate || !leaveData.endDate) {
       setStatus({
@@ -166,9 +126,10 @@ function RequestLeavePage() {
     try {
       await employeeApi.postLeaveRequest(leaveData);
       setStatus({ loading: false, error: null, success: true });
-      e.target.reset();
+      e.target.reset(); // รีเซ็ตฟอร์ม
       setStartDate(null);
       setEndDate(null);
+      setLeaveDuration("FULL_DAY"); // รีเซ็ตตัวเลือกกลับเป็นเต็มวัน
       setTimeout(
         () => setStatus({ loading: false, error: null, success: false }),
         5000
@@ -182,19 +143,11 @@ function RequestLeavePage() {
     }
   };
 
-  {
-    /* --- 👇👇👇 ไฮไลท์: 3. อัปเดต Logic การปิดใช้งานวันที่ในปฏิทิน --- */
-  }
   const isDateDisabled = (date) => {
-    // แปลงวัน (0=Sun, 1=Mon,...) เป็นชื่อวันแบบตัวพิมพ์ใหญ่
     const dayName = format(date, "EEEE").toUpperCase();
-
-    // ปิดการใช้งานถ้า "ไม่ใช่วันทำงาน"
     if (workingDays.length > 0 && !workingDays.includes(dayName)) {
       return true;
     }
-
-    // ปิดการใช้งาน "วันหยุดบริษัท"
     return holidays.some(
       (holiday) =>
         date.getFullYear() === holiday.getFullYear() &&
@@ -237,7 +190,6 @@ function RequestLeavePage() {
                 <SelectValue placeholder="เลือกประเภทการลา" />
               </SelectTrigger>
               <SelectContent>
-                {/* <--- ไฮไลท์: แก้ไขค่า value ให้ตรงกับที่ Backend ต้องการ --- */}
                 <SelectItem value="VACATION">วันลาพักร้อน</SelectItem>
                 <SelectItem value="PERSONAL">วันลากิจ</SelectItem>
                 <SelectItem value="SICK">วันลาป่วย</SelectItem>
@@ -246,6 +198,31 @@ function RequestLeavePage() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* --- 👇👇👇 5. เพิ่ม UI สำหรับเลือกช่วงเวลาที่ลา --- */}
+          <div className="space-y-2">
+            <Label>ช่วงเวลาที่ลา</Label>
+            <RadioGroup
+              name="leaveDuration"
+              value={leaveDuration}
+              onValueChange={setLeaveDuration}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="FULL_DAY" id="r1" />
+                <Label htmlFor="r1">เต็มวัน</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="HALF_DAY_MORNING" id="r2" />
+                <Label htmlFor="r2">ครึ่งวัน (เช้า)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="HALF_DAY_AFTERNOON" id="r3" />
+                <Label htmlFor="r3">ครึ่งวัน (บ่าย)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>วันที่เริ่มลา</Label>
@@ -266,7 +243,7 @@ function RequestLeavePage() {
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent>
+                <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
                     selected={startDate}
@@ -281,12 +258,14 @@ function RequestLeavePage() {
               <Label>วันที่สิ้นสุด</Label>
               <Popover>
                 <PopoverTrigger asChild>
+                  {/* --- 👇👇👇 6. ปิดการใช้งานปุ่ม endDate เมื่อเป็นการลาครึ่งวัน --- */}
                   <Button
                     variant={"outline"}
                     className={cn(
                       "w-full justify-start text-left font-normal",
                       !endDate && "text-muted-foreground"
                     )}
+                    disabled={leaveDuration !== "FULL_DAY"}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? (
@@ -296,12 +275,14 @@ function RequestLeavePage() {
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent>
+                <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
                     selected={endDate}
                     onSelect={setEndDate}
-                    disabled={isDateDisabled}
+                    disabled={(date) =>
+                      isDateDisabled(date) || (startDate && date < startDate)
+                    }
                     initialFocus
                   />
                 </PopoverContent>
