@@ -85,13 +85,13 @@ function buildAttendanceRows({
   department = "-",
   position = "-"
 }) {
-  // 1. หา "วันแรกที่มี attendance"
+  // หา "วันแรกที่มี attendance"
   const attendanceDates = attendances.map(att => att.date);
   const firstWorkDate = attendanceDates.length > 0
     ? attendanceDates.reduce((min, curr) => (curr < min ? curr : min))
     : `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
-  // 2. วันที่เริ่ม = firstWorkDate, สิ้นสุด = สิ้นเดือน
+  // วันที่เริ่ม = firstWorkDate, สิ้นสุด = สิ้นเดือน
   const startDay = dayjs(firstWorkDate);
   const endDay = dayjs(`${year}-${month + 1}-01`).endOf("month");
   const days = [];
@@ -99,7 +99,7 @@ function buildAttendanceRows({
     days.push(d.format("YYYY-MM-DD"));
   }
 
-  // 3. map เดิม
+  // map เดิม
   const attMap = {};
   attendances.forEach(att => attMap[att.date] = att);
   const holidayMap = {};
