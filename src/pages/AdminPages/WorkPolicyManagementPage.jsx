@@ -251,7 +251,7 @@ function WorkPolicyManagementPage() {
   }, [])
 
   return (
-    <div className="p-4 md:px-24">
+    <div className="p-4 md:px-24 max-w-full">
       <p className="text-4xl font-bold mt-8">Work Policies</p>
       <p className="my-4 font-semibold text-black/50">Manage company policies related to employment, conduct, and operations.</p>
 
@@ -364,7 +364,7 @@ function WorkPolicyManagementPage() {
                 <div className="col-span-2">
                   <Label className="mb-3">Working Days</Label>
                   <div className="grid grid-cols-4 gap-2 mt-2">
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                    {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((day) => (
                       <div key={day} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -407,8 +407,8 @@ function WorkPolicyManagementPage() {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
+      <div className="border rounded-lg "> 
+        <Table className="border rounded-lg overflow-x-auto">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[150px] font-bold">Policy Name</TableHead>
@@ -416,9 +416,9 @@ function WorkPolicyManagementPage() {
               <TableHead className="w-[120px] text-center font-bold">End Time</TableHead>
               <TableHead className="w-[180px] text-center font-bold">
                 Allowed Late
-                <span className="text-xs text-black/40 hidden md:inline ml-1">
+                {/* <span className="text-xs text-black/40 hidden md:inline ml-1">
                   minute/month
-                </span>
+                </span> */}
               </TableHead>
               <TableHead className="w-[120px] text-center font-bold">Deduct Late</TableHead>
               <TableHead className="w-[140px] text-center font-bold">Half Day Rule</TableHead>
@@ -440,7 +440,12 @@ function WorkPolicyManagementPage() {
                   <TableCell className="text-center font-semibold text-black/70">{policy.halfDayAbsentRule || <Badge className={'font-semibold text-black/70'} variant="outline">ยังไม่มีข้อมูล</Badge>}</TableCell>
                   <TableCell className="text-center font-semibold text-black/70">{policy.minHoursForHalfDay || <Badge className={'font-semibold text-black/70'} variant="outline">ยังไม่มีข้อมูล</Badge>}</TableCell>
                   <TableCell className="text-center font-semibold text-black/70">{policy.remark || <Badge className={'font-semibold text-black/70'} variant="outline">ยังไม่มีข้อมูล</Badge>}</TableCell>
-                  <TableCell className="text-center font-semibold text-black/70">{policy.workingDays?.join(', ') || <Badge className={'font-semibold text-black/70'} variant="outline">ยังไม่มีข้อมูล</Badge>}</TableCell>
+                  <TableCell className="text-center font-semibold text-black/70">
+                    {Array.isArray(policy.workingDays) && policy.workingDays.length > 0 
+                      ? policy.workingDays.join(', ') 
+                      : <Badge className={'font-semibold text-black/70'} variant="outline">ยังไม่มีข้อมูล</Badge>
+                    }
+                  </TableCell>
                   <TableCell className="text-center space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(policy)}>
                       <Pencil className="h-4 w-4 text-muted-foreground" />

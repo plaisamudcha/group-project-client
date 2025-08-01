@@ -198,7 +198,7 @@ function HolidayManagementPage() {
         <Button onClick={handleAddClick}>Add Holiday</Button>
       </div>
 
-      <div className="border rounded-lg ">
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
