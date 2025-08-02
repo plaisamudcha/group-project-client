@@ -38,39 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, XCircle, ListFilter, Eye } from "lucide-react";
 import { toast } from 'react-toastify';
-
-// Mock API - ในสถานการณ์จริงจะมาจากการเรียก API
-const admintoApi = {
-  // จำลองการดึงข้อมูลคำขอลาทั้งหมด
-  getAllLeaveRequests: async (year) => {
-    console.log(`Fetching requests for year: ${year}`);
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            requests: [
-              { id: 1, employeeName: 'สมชาย ใจดี', leaveType: 'SICK', startDate: '2024-07-15', endDate: '2024-07-15', days: 1, reason: 'มีไข้และปวดหัว', status: 'PENDING', createdAt: '2024-07-14T10:00:00Z' },
-              { id: 2, employeeName: 'สมหญิง จริงใจ', leaveType: 'PERSONAL', startDate: '2024-07-20', endDate: '2024-07-22', days: 3, reason: 'ไปทำธุระส่วนตัวต่างจังหวัดกับครอบครัวเนื่องจากเป็นเรื่องเร่งด่วน', status: 'PENDING', createdAt: '2024-07-12T14:30:00Z' },
-              { id: 3, employeeName: 'มานะ บากบั่น', leaveType: 'VACATION', startDate: '2024-08-01', endDate: '2024-08-05', days: 5, reason: 'พักผ่อนประจำปี', status: 'APPROVED', createdAt: '2024-06-20T11:00:00Z' },
-              { id: 4, employeeName: 'ปิติ ยินดี', leaveType: 'SICK', startDate: '2024-07-10', endDate: '2024-07-10', days: 1, reason: 'อาหารเป็นพิษ', status: 'REJECTED', createdAt: '2024-07-10T09:00:00Z', remark: 'เอกสารไม่ครบถ้วน' },
-              { id: 5, employeeName: 'สมชาย ใจดี', leaveType: 'PERSONAL', startDate: '2024-08-10', endDate: '2024-08-10', days: 1, reason: 'ติดต่อราชการ', status: 'APPROVED', createdAt: '2024-07-01T16:00:00Z' },
-              { id: 6, employeeName: 'สมหญิง จริงใจ', leaveType: 'VACATION', startDate: '2023-12-25', endDate: '2023-12-29', days: 5, reason: 'เที่ยวปีใหม่', status: 'APPROVED', createdAt: '2023-11-15T10:00:00Z' },
-            ]
-          }
-        });
-      }, 1000);
-    });
-  },
-  // จำลองการอัปเดตสถานะใบลา
-  updateLeaveStatus: async (requestId, status, remark) => {
-    console.log(`Updating request ${requestId} to ${status} with remark: ${remark}`);
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ success: true, message: `อัปเดตสถานะสำเร็จ` });
-      }, 500);
-    });
-  }
-};
+import admintoApi from "@/src/api/adminApi";
 
 // การกำหนดประเภทการลา
 const LEAVE_TYPES = {
@@ -106,8 +74,8 @@ function LeaveManagementPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await admintoApi.getAllLeaveRequests(selectedYear);
-      const yearFilteredData = response.data.requests.filter(req => dayjs(req.startDate).year() === parseInt(selectedYear));
+      const response = await admintoApi.getAllLeaveRequst();
+      const yearFilteredData = response.data.filter(req => dayjs(req.startDate).year() === parseInt(selectedYear));
       setAllRequests(yearFilteredData);
     } catch (error) {
       console.error("ไม่สามารถดึงข้อมูลใบลาได้:", error);
@@ -142,7 +110,7 @@ function LeaveManagementPage() {
     const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
 
     try {
-      await admintoApi.updateLeaveStatus(request.id, newStatus);
+      await admintoApi.updateLeaveStatus(request.id, { status: newStatus });
       toast.success(`ดำเนินการ ${newStatus === 'APPROVED' ? 'อนุมัติ' : 'ปฏิเสธ'} ใบลาสำเร็จ`);
       setActionTarget(null);
       loadLeaveRequests(); // Reload data
@@ -172,7 +140,7 @@ function LeaveManagementPage() {
   return (
     <div className="p-4 md:px-24">
       <header className="my-8">
-        <h1 className="text-3xl font-bold text-gray-800">LeaveRequest Management</h1>
+        <h1 className="text-3xl font-bold text-gray-800">LeaveRequestManagement</h1>
         <p className="text-muted-foreground">ตรวจสอบและดำเนินการคำขอลาของพนักงาน</p>
       </header>
 
@@ -212,12 +180,12 @@ function LeaveManagementPage() {
               filteredRequests.map((req) => (
                 <TableRow key={req.id} className="hover:bg-muted/50">
                   <TableCell>
-                    <div className="font-medium text-gray-800 truncate" title={req.employeeName}>{req.employeeName}</div>
+                    <div className="font-medium text-gray-800 truncate" title={req.user?.name}>{req.user?.name || 'N/A'}</div>
                     <div className="text-sm text-muted-foreground">ยื่นเมื่อ: {dayjs(req.createdAt).format('DD/MM/YYYY')}</div>
                   </TableCell>
                   <TableCell className="text-center">{LEAVE_TYPES[req.leaveType]}</TableCell>
                   <TableCell className="text-center">{dayjs(req.startDate).format('DD MMM YYYY')} - {dayjs(req.endDate).format('DD MMM YYYY')}</TableCell>
-                  <TableCell className="text-center">{req.days}</TableCell>
+                  <TableCell className="text-center">{req.leaveDays}</TableCell>
                   <TableCell className="text-center">
                     <Badge
                       className={
@@ -243,6 +211,12 @@ function LeaveManagementPage() {
                         </Button>
                       </>
                     )}
+                    {req.status === 'APPROVED' && (
+                      <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleActionClick(req, 'REJECT')}>
+                        <XCircle className="mr-1 h-4 w-4" /> ปฏิเสธ
+                      </Button>
+                    )}
+                
                   </TableCell>
                 </TableRow>
               ))
@@ -253,20 +227,19 @@ function LeaveManagementPage() {
         </Table>
       </div>
 
-      {/* Details Dialog - Conditionally render the entire Dialog */}
       {viewingRequest && (
         <Dialog open={true} onOpenChange={() => setViewingRequest(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>รายละเอียดใบลา</DialogTitle>
               <DialogDescription>
-                คำขอลาของ {viewingRequest.employeeName}
+                คำขอลาของ {viewingRequest.user?.name || 'N/A'}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-5 py-4">
               <div className="flex justify-between items-baseline">
                 <span className="font-semibold text-muted-foreground">พนักงาน</span>
-                <span className="text-right">{viewingRequest.employeeName}</span>
+                <span className="text-right">{viewingRequest.user?.name || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-baseline">
                 <span className="font-semibold text-muted-foreground">ประเภท</span>
@@ -278,7 +251,7 @@ function LeaveManagementPage() {
               </div>
               <div className="flex justify-between items-baseline">
                 <span className="font-semibold text-muted-foreground">จำนวน</span>
-                <span className="text-right">{viewingRequest.days} วัน</span>
+                <span className="text-right">{viewingRequest.leaveDays} วัน</span>
               </div>
               <div className="flex flex-col items-start space-y-1">
                 <span className="font-semibold text-muted-foreground">เหตุผล</span>
@@ -312,17 +285,15 @@ function LeaveManagementPage() {
         </Dialog>
       )}
 
-
-      {/* Action Confirmation Dialog */}
       <AlertDialog open={!!actionTarget} onOpenChange={() => setActionTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>ยืนยันการ{actionTarget?.action === 'APPROVE' ? 'อนุมัติ' : 'ปฏิเสธ'}ใบลา</AlertDialogTitle>
             <AlertDialogDescription>
-              คุณต้องการ{actionTarget?.action === 'APPROVE' ? 'อนุมัติ' : 'ปฏิเสธ'}คำขอลางานของ <strong>{actionTarget?.request?.employeeName}</strong> ใช่หรือไม่?
+              คุณต้องการ{actionTarget?.action === 'APPROVE' ? 'อนุมัติ' : 'ปฏิเสธ'}คำขอลางานของ <strong>{actionTarget?.request?.user?.name || 'N/A'}</strong> ใช่หรือไม่?
               <div className="mt-2 text-sm text-muted-foreground border p-2 rounded-md">
                 <div><strong>ประเภท:</strong> {LEAVE_TYPES[actionTarget?.request?.leaveType]}</div>
-                <div><strong>วันที่:</strong> {dayjs(actionTarget?.request?.startDate).format('DD/MM/YY')} - {dayjs(actionTarget?.request?.endDate).format('DD/MM/YY')} ({actionTarget?.request?.days} วัน)</div>
+                <div><strong>วันที่:</strong> {dayjs(actionTarget?.request?.startDate).format('DD/MM/YY')} - {dayjs(actionTarget?.request?.endDate).format('DD/MM/YY')} ({actionTarget?.request?.leaveDays} วัน)</div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
