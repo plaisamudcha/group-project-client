@@ -40,8 +40,6 @@ import { Loader2, CheckCircle2, XCircle, ListFilter, Eye } from "lucide-react";
 import { toast } from 'react-toastify';
 import admintoApi from "@/src/api/adminApi";
 
-
-
 // การกำหนดประเภทการลา
 const LEAVE_TYPES = {
   VACATION: 'ลาพักร้อน',
@@ -112,7 +110,6 @@ function LeaveManagementPage() {
     const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
 
     try {
-      // Use the new update status API
       await admintoApi.updateLeaveStatus(request.id, { status: newStatus });
       toast.success(`ดำเนินการ ${newStatus === 'APPROVED' ? 'อนุมัติ' : 'ปฏิเสธ'} ใบลาสำเร็จ`);
       setActionTarget(null);
@@ -143,7 +140,7 @@ function LeaveManagementPage() {
   return (
     <div className="p-4 md:px-24">
       <header className="my-8">
-        <h1 className="text-3xl font-bold text-gray-800">LeaveRequest Management</h1>
+        <h1 className="text-3xl font-bold text-gray-800">จัดการใบลา</h1>
         <p className="text-muted-foreground">ตรวจสอบและดำเนินการคำขอลาของพนักงาน</p>
       </header>
 
@@ -214,6 +211,12 @@ function LeaveManagementPage() {
                         </Button>
                       </>
                     )}
+                    {req.status === 'APPROVED' && (
+                      <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => handleActionClick(req, 'REJECT')}>
+                        <XCircle className="mr-1 h-4 w-4" /> ปฏิเสธ
+                      </Button>
+                    )}
+                
                   </TableCell>
                 </TableRow>
               ))

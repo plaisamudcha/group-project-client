@@ -1,22 +1,22 @@
 import { privateApi } from "./baseApi";
 const admintoApi = {
-    fetchAllholiday: () => {
-        return privateApi.get("/holidays")
-    },
-    deleteHoliday: (id) => {
-        return privateApi.delete(`/holidays/${id}`)
-    },
-    ceateHoliday: (body) => {
-        return privateApi.post("/holidays",body)
-    },
-    updateHoliday: (id, body) => {
+  fetchAllholiday: () => {
+    return privateApi.get("/holidays")
+  },
+  deleteHoliday: (id) => {
+    return privateApi.delete(`/holidays/${id}`)
+  },
+  ceateHoliday: (body) => {
+    return privateApi.post("/holidays", body)
+  },
+  updateHoliday: (id, body) => {
     return privateApi.put(`/holidays/${id}`, body);
-  },getAllUser:()=>{
+  }, getAllUser: () => {
     return privateApi.get('/users')
-  },createEntitlements: (payload) => {
+  }, createEntitlements: (payload) => {
     return privateApi.post('/aunnual-leave/create', payload);
   },
-    updateEntitlements: (payload) => {
+  updateEntitlements: (payload) => {
     return privateApi.post('/aunnual-leave/create', payload);
   },
   createBulkEntitlements: (payload) => {
@@ -24,8 +24,10 @@ const admintoApi = {
   },
   deleteUserEntitlements: (userId, year) => {
     return privateApi.delete(`/aunnual-leave/user/${userId}/year/${year}`);
-  },getAllLeaveRequst:()=>{
-     return privateApi.get("/leaves")
+  }, getAllLeaveRequst: () => {
+    return privateApi.get("/leaves")
+  }, updateLeaveStatus: (id, status) => {
+    return privateApi.put(`/leaves/${id}/status`, status)
   }
 };
 
