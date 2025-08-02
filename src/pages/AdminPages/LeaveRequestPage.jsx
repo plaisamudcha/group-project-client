@@ -140,7 +140,7 @@ function LeaveManagementPage() {
   return (
     <div className="p-4 md:px-24">
       <header className="my-8">
-        <h1 className="text-3xl font-bold text-gray-800">จัดการใบลา</h1>
+        <h1 className="text-3xl font-bold text-gray-800">LeaveRequestManagement</h1>
         <p className="text-muted-foreground">ตรวจสอบและดำเนินการคำขอลาของพนักงาน</p>
       </header>
 
