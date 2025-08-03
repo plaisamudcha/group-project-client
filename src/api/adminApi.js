@@ -1,22 +1,41 @@
 import { privateApi } from "./baseApi";
+
 const admintoApi = {
-    fetchAllholiday: () => {
-        return privateApi.get("/holidays")
-    },
-    deleteHoliday: (id) => {
-        return privateApi.delete(`/holidays/${id}`)
-    },
-    ceateHoliday: (body) => {
-        return privateApi.post("/holidays",body)
-    },
-    updateHoliday: (id, body) => {
+  // Holiday APIs
+  fetchAllholiday: () => {
+    return privateApi.get("/holidays")
+  },
+  deleteHoliday: (id) => {
+    return privateApi.delete(`/holidays/${id}`)
+  },
+  ceateHoliday: (body) => {
+    return privateApi.post("/holidays", body)
+  },
+  updateHoliday: (id, body) => {
     return privateApi.put(`/holidays/${id}`, body);
-  },getAllUser:()=>{
+  },
+
+  // Work Policy APIs
+  fetchPolicies: async () => {
+    return await privateApi.get("/work-policies");
+  },
+  createPolicy: async (data) => {
+    return await privateApi.post("/work-policies", data);
+  },
+  updatePolicy: async (id, data) => {
+    return await privateApi.put(`/work-policies/${id}`, data);
+  },
+
+  // User APIs
+  getAllUser: () => {
     return privateApi.get('/users')
-  },createEntitlements: (payload) => {
+  },
+
+  // Annual Leave APIs
+  createEntitlements: (payload) => {
     return privateApi.post('/aunnual-leave/create', payload);
   },
-    updateEntitlements: (payload) => {
+  updateEntitlements: (payload) => {
     return privateApi.post('/aunnual-leave/create', payload);
   },
   createBulkEntitlements: (payload) => {
