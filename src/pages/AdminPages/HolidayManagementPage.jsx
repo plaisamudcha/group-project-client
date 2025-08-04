@@ -40,8 +40,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Pencil, Trash2, XCircle, Calendar, CalendarDays, Plus, Clock, Users } from "lucide-react";
+import { 
+  Loader2, 
+  Pencil, 
+  Trash2, 
+  XCircle, 
+  Calendar, 
+  CalendarDays, 
+  Plus, 
+  Clock, 
+  RefreshCw 
+} from "lucide-react";
 import admintoApi from "@/src/api/adminApi";
+import { toast } from 'react-toastify';
 
 const currentYear = dayjs().year();
 const availableYears = [currentYear - 1, currentYear, currentYear + 1];
@@ -54,6 +65,8 @@ function HolidayManagementPage() {
   const [holidayName, setHolidayName] = useState("");
   const [holidayDate, setHolidayDate] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [holidayToDelete, setHolidayToDelete] = useState(null);
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
@@ -66,6 +79,7 @@ function HolidayManagementPage() {
     try {
       setIsLoading(true);
       setError(null);
+      
       const response = await admintoApi.fetchAllholiday();
       const sortedHolidays = response.data.holiday.sort((a, b) => a.date.localeCompare(b.date));
       setHolidays(sortedHolidays);
@@ -80,6 +94,10 @@ function HolidayManagementPage() {
   useEffect(() => {
     fetchHolidays();
   }, []);
+
+  const handleRefresh = () => {
+    fetchHolidays();
+  };
 
   const handleAddClick = () => {
     setEditingHoliday(null);
@@ -98,13 +116,12 @@ function HolidayManagementPage() {
   };
 
   const handleSave = async () => {
-    const formDataForValidation = {
-      name: holidayName,
-      date: holidayDate,
-    };
+    if (isSaving) return; // Prevent double submission
+    
+    setIsSaving(true);
+    setErrors({});
 
     try {
-      setErrors({});
       if (editingHoliday) {
         const payload = {
           name: holidayName,
@@ -117,11 +134,13 @@ function HolidayManagementPage() {
         }
 
         await admintoApi.updateHoliday(editingHoliday.id, payload);
+        toast.success("Holiday updated successfully!");
       } else {
         await admintoApi.ceateHoliday({
           name: holidayName,
           date: holidayDate,
         });
+        toast.success("Holiday created successfully!");
       }
 
       await fetchHolidays();
@@ -135,21 +154,26 @@ function HolidayManagementPage() {
         setErrors(newErrors);
       } else {
         console.error("Failed to save holiday:", err);
-        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        toast.error("Failed to save holiday");
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const confirmDelete = async () => {
-    if (holidayToDelete) {
+    if (holidayToDelete && !isDeleting) {
+      setIsDeleting(true);
       try {
         await admintoApi.deleteHoliday(holidayToDelete);
-        fetchHolidays();
+        await fetchHolidays();
         setHolidayToDelete(null);
+        toast.success("Holiday deleted successfully!");
       } catch (err) {
         console.error("Failed to delete holiday:", err);
-        alert("เกิดข้อผิดพลาด: ไม่สามารถลบข้อมูลได้");
-        setHolidayToDelete(null);
+        toast.error("Failed to delete holiday");
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -186,7 +210,14 @@ function HolidayManagementPage() {
         <div className="text-center">
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Data</h2>
-          <p className="text-gray-600">{error}</p>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button 
+            onClick={() => fetchHolidays()} 
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
         </div>
       </div>
     );
@@ -274,13 +305,25 @@ function HolidayManagementPage() {
                 </Select>
               </div>
 
-              <Button 
-                onClick={handleAddClick} 
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Holiday
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button 
+                  onClick={handleAddClick} 
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Holiday
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -297,7 +340,16 @@ function HolidayManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredHolidays.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        <span className="ml-2">Loading holidays...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredHolidays.length > 0 ? (
                   filteredHolidays.map((holiday, index) => (
                     <TableRow key={holiday.id} className="hover:bg-green-50/50 transition-colors duration-200">
                       <TableCell className="py-4">
@@ -396,6 +448,7 @@ function HolidayManagementPage() {
                   value={holidayDate}
                   onChange={(e) => setHolidayDate(e.target.value)}
                   className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  disabled={isSaving}
                 />
                 {errors.date && (
                   <p className="text-sm text-red-500 mt-1">{errors.date}</p>
@@ -409,6 +462,7 @@ function HolidayManagementPage() {
                   onChange={(e) => setHolidayName(e.target.value)}
                   placeholder="Enter holiday name"
                   className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+                  disabled={isSaving}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500 mt-1">{errors.name}</p>
@@ -417,16 +471,24 @@ function HolidayManagementPage() {
             </div>
             <DialogFooter className="gap-3">
               <DialogClose asChild>
-                <Button type="button" variant="outline" className="px-6">
+                <Button type="button" variant="outline" className="px-6" disabled={isSaving}>
                   Cancel
                 </Button>
               </DialogClose>
               <Button 
                 type="button" 
                 onClick={handleSave}
+                disabled={isSaving}
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 px-6"
               >
-                {editingHoliday ? "Update Holiday" : "Create Holiday"}
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {editingHoliday ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  editingHoliday ? "Update Holiday" : "Create Holiday"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -444,12 +506,22 @@ function HolidayManagementPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-3">
-              <AlertDialogCancel className="px-6">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="px-6" disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={confirmDelete}
+                disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 px-6"
               >
-                Delete Holiday
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Holiday"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

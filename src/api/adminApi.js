@@ -71,6 +71,11 @@ const admintoApi = {
   removeEmployeeFromShift: (body) => {
     return privateApi.post("/shifts/remove-employee", body);
   },
+
+  //Attendances APIs
+  getAllAttendance: () => {
+    return privateApi.get("/attendance/all");
+  }
 };
 
 export default admintoApi;
