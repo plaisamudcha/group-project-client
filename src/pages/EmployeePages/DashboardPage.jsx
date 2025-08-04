@@ -274,8 +274,8 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-6">
       <div className="w-full max-w-7xl mx-auto">
-        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm pt-0">
+          <CardHeader className="text-center pb-8 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg py-4">
             <div className="flex items-center justify-center mb-4">
               <Home className="h-8 w-8 mr-3" />
               <CardTitle className="text-3xl font-bold">แดชบอร์ด</CardTitle>

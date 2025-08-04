@@ -171,74 +171,11 @@ function RequestLeavePage() {
     );
   };
 
-  const calculateLeaveDays = () => {
-    if (!startDate || !endDate) return 0;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    let count = 0;
-
-    for (
-      let date = new Date(start);
-      date <= end;
-      date.setDate(date.getDate() + 1)
-    ) {
-      if (!isDateDisabled(date)) {
-        count += leaveDuration === "FULL_DAY" ? 1 : 0.5;
-      }
-    }
-
-    return count;
-  };
-
-  const getLeaveTypeInfo = (type) => {
-    const types = {
-      VACATION: {
-        label: "วันลาพักร้อน",
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        icon: "🏖️",
-        description: "สำหรับพักผ่อนและท่องเที่ยว",
-      },
-      PERSONAL: {
-        label: "วันลากิจ",
-        color: "bg-green-100 text-green-800 border-green-200",
-        icon: "📋",
-        description: "สำหรับธุระส่วนตัวที่จำเป็น",
-      },
-      SICK: {
-        label: "วันลาป่วย",
-        color: "bg-red-100 text-red-800 border-red-200",
-        icon: "🏥",
-        description: "สำหรับการรักษาพยาบาลและพักฟื้น",
-      },
-      MATERNITY: {
-        label: "ลาคลอด",
-        color: "bg-pink-100 text-pink-800 border-pink-200",
-        icon: "👶",
-        description: "สำหรับการคลอดบุตรและดูแลทารก",
-      },
-      UNPAID: {
-        label: "วันลางานไม่รับเงินเดือน",
-        color: "bg-gray-100 text-gray-800 border-gray-200",
-        icon: "💼",
-        description: "สำหรับกรณีพิเศษที่ไม่ได้รับเงินเดือน",
-      },
-    };
-    return (
-      types[type] || {
-        label: type,
-        color: "bg-gray-100 text-gray-800 border-gray-200",
-        icon: "📄",
-        description: "ประเภทการลาอื่นๆ",
-      }
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-6">
       <div className="w-full max-w-4xl mx-auto">
-        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm pt-0">
+          <CardHeader className="text-center pb-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg py-4">
             <div className="flex items-center justify-center mb-4">
               <Send className="h-8 w-8 mr-3" />
               <CardTitle className="text-3xl font-bold">

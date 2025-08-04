@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import employeeApi from "@/src/api/employeeApi";
 import { useNavigate } from "react-router";
 import useUserStore from "@/src/stores/useUserStore";
-import fetchAllholiday from "@/src/api/employeeApi";
 import {
   Card,
   CardContent,
@@ -69,79 +68,6 @@ function calcHourDiff(start, end) {
   if (diff < 0) diff += 24 * 60; // ข้ามวัน (ไม่น่าเจอ)
   return (diff / 60).toFixed(2);
 }
-// --- ฟังก์ชันสร้างวันที่ในเดือน ---
-function generateDaysOfMonth(year, month) {
-  const days = [];
-  const daysInMonth = dayjs(`${year}-${month + 1}-01`).daysInMonth();
-  for (let d = 1; d <= daysInMonth; d++) {
-    days.push(dayjs(`${year}-${month + 1}-${d}`).format("YYYY-MM-DD"));
-  }
-  return days;
-}
-
-// --- ฟังก์ชันรวม Attendance + Holiday + Row  เรียกใช้เริ่มตั้งแต่วันที่ 1 ของเดือน ---
-// function buildAttendanceRows({
-//   attendances,
-//   holidays,
-//   year,
-//   month,
-//   userName = "",
-//   department = "-",
-//   position = "-",
-// }) {
-//   const days = generateDaysOfMonth(year, month);
-
-//   // Attendance map
-//   const attMap = {};
-//   attendances.forEach(att => attMap[att.date] = att);
-
-//   // Holiday map
-//   const holidayMap = {};
-//   holidays.forEach(h => holidayMap[h.date] = h.name);
-
-//   return days.map(date => {
-//     const d = dayjs(date);
-//     const weekday = d.format("dd"); // เช่น 'จ.' (Mon), 'อ.' (Tue)
-//     const displayDate = d.format("DD/MM/YY") + " " + weekday;
-
-//     const isWeekend = [0, 6].includes(d.day());
-//     const holidayName = holidayMap[date];
-
-//     const att = attMap[date];
-
-//     let summary = "";
-//     if (holidayName) summary = holidayName;
-//     else if (isWeekend) summary = "วันหยุด";
-//     else if (!att) summary = "ขาดงาน";
-//     else if (att.isAbsent) summary = "ขาดงาน";
-//     else if (att.isLate) summary = "มาสาย";
-//     else summary = "ปกติ";
-
-//     // เวลาทำงาน
-//     const workPlan = "08:00";
-//     const workDiff = att
-//       ? `${att.totalHours < 8 ? "-" : ""}${Math.abs(8 - att.totalHours).toFixed(2)}`
-//       : "-08:00";
-
-//     return {
-//       name: userName,
-//       department,
-//       position,
-//       date: displayDate,
-//       checkin_plan: "08:00",
-//       checkin_actual: att?.clockIn || "",
-//       checkin_note: att?.isLate ? `มาสาย ${att.lateMinutes} นาที` : "",
-//       checkout_plan: "17:00",
-//       checkout_actual: att?.clockOut || "",
-//       checkout_note: "",
-//       work_plan: "08:00",
-//       work_actual: att ? att.totalHours.toFixed(2) : "00:00",
-//       work_diff: att ? workDiff : "-08:00",
-//       summary,
-//     };
-//   });
-// }
-
 // --- ฟังก์ชันรวม Attendance + Holiday + Row เรียกใช้เริ่มตั้งแต่วันแรกที่เข้าทำงาน ---
 function buildAttendanceRows({
   attendances,
@@ -324,6 +250,7 @@ function AttendancePage() {
         setAttendances(res.data.attendances || []);
       })
       .catch((err) => {
+        console.error("Error fetching attendance:", err);
         setAttendances([]);
       })
       .finally(() => setLoading(false));
@@ -411,8 +338,8 @@ function AttendancePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-100 p-6">
       <div className="w-full max-w-7xl mx-auto">
-        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-t-lg">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm pt-0">
+          <CardHeader className="text-center pb-8 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-t-lg py-4">
             <div className="flex items-center justify-center mb-4">
               <Clock className="h-8 w-8 mr-3" />
               <CardTitle className="text-3xl font-bold">
