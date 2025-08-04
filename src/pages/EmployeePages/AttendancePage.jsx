@@ -1,7 +1,47 @@
 import dayjs from "dayjs";
 import { AttendanceTable } from "@/src/components/attendance-table";
 import { useEffect, useState } from "react";
+import employeeApi from "@/src/api/employeeApi";
+import { useNavigate } from "react-router";
+import useUserStore from "@/src/stores/useUserStore";
+import fetchAllholiday from "@/src/api/employeeApi";
 
+// --- ฟังก์ชันแปลงชั่วโมงทศนิยมเป็นชั่วโมง:นาที ---
+// เช่น 8.5 → "8:30", 9.25 → "9:15"
+function toHourMinute(decimalHour) {
+  if (typeof decimalHour !== "number" || isNaN(decimalHour) || decimalHour <= 0) return "0:00";
+  const hour = Math.floor(decimalHour);
+  const min = Math.round((decimalHour - hour) * 60);
+  return `${hour}:${min.toString().padStart(2, "0")}`;
+}
+function statusToSummary(status, att) {
+  switch (status) {
+    case "PENDING":
+      return "รอประมวลผล";
+    case "ABSENT":
+      return "ขาดงาน";
+    case "ON_LEAVE":
+      return "ลา";
+    case "COMPLETED":
+      if (att?.isLate) return "มาสาย";
+      return "ปกติ";
+    case "INCOMPLETED":
+      return "ยังไม่ครบวัน";
+    default:
+      return "-";
+  }
+}
+// --- ฟังก์ชันคำนวณส่วนต่างชั่วโมงทำงาน ---
+// เช่น "08:30" - "17:30" → "-9.00",
+function calcHourDiff(start, end) {
+  if (!start || !end) return "-";
+  // start, end รูปแบบ "08:30", "17:30"
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  let diff = (eh * 60 + em) - (sh * 60 + sm); // นาที
+  if (diff < 0) diff += 24 * 60; // ข้ามวัน (ไม่น่าเจอ)
+  return (diff / 60).toFixed(2);
+}
 // --- ฟังก์ชันสร้างวันที่ในเดือน ---
 function generateDaysOfMonth(year, month) {
   const days = [];
@@ -83,23 +123,40 @@ function buildAttendanceRows({
   month,
   userName = "",
   department = "-",
-  position = "-"
+  position = "-",
+  checkinPlan = "-",
+  checkoutPlan = "-",
+  workPlanHour = "-",
 }) {
-  // หา "วันแรกที่มี attendance"
   const attendanceDates = attendances.map(att => att.date);
+  const monthStart = dayjs(`${year}-${String(month + 1).padStart(2, "0")}-01`);
+  const monthEnd = monthStart.endOf("month");
+  const today = dayjs();
+
+  // หา firstWorkDate ตาม logic เดิม
   const firstWorkDate = attendanceDates.length > 0
     ? attendanceDates.reduce((min, curr) => (curr < min ? curr : min))
-    : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    : null;
 
-  // วันที่เริ่ม = firstWorkDate, สิ้นสุด = สิ้นเดือน
-  const startDay = dayjs(firstWorkDate);
-  const endDay = dayjs(`${year}-${month + 1}-01`).endOf("month");
+  // ข้ามเดือนที่ยังไม่เริ่มงาน
+  if (firstWorkDate && dayjs(firstWorkDate).isAfter(monthEnd)) return [];
+  let startDay = monthStart;
+  if (firstWorkDate && dayjs(firstWorkDate).isAfter(monthStart)) {
+    startDay = dayjs(firstWorkDate);
+  }
+
+  // *** set endDay ให้เป็น min(monthEnd, today)
+  let endDay = monthEnd;
+  if (today.isBefore(monthEnd, "day") && today.isAfter(monthStart.subtract(1, "day"))) {
+    endDay = today;
+  }
+
+  // gen days เฉพาะที่ <= endDay
   const days = [];
   for (let d = startDay; !d.isAfter(endDay, "day"); d = d.add(1, "day")) {
     days.push(d.format("YYYY-MM-DD"));
   }
 
-  // map เดิม
   const attMap = {};
   attendances.forEach(att => attMap[att.date] = att);
   const holidayMap = {};
@@ -112,42 +169,54 @@ function buildAttendanceRows({
     const isWeekend = [0, 6].includes(d.day());
     const holidayName = holidayMap[date];
     const att = attMap[date];
+    const hasClockIn = att?.clockIn && att.clockIn !== "";
+    const hasClockOut = att?.clockOut && att.clockOut !== "";
 
+
+    // กำหนด summary
     let summary = "";
     if (holidayName) summary = holidayName;
     else if (isWeekend) summary = "วันหยุด";
     else if (!att) summary = "ขาดงาน";
-    else if (att.isAbsent) summary = "ขาดงาน";
-    else if (att.isLate) summary = "มาสาย";
-    else summary = "ปกติ";
+    else summary = statusToSummary(att.status, att);
 
-    const workDiff = att
-      ? `${att.totalHours < 8 ? "-" : ""}${Math.abs(8 - att.totalHours).toFixed(2)}`
-      : "-08:00";
+    let workDiff = "-";
+    let workActual = "0:00";
+
+    if (att && !att.isAbsent && hasClockIn && hasClockOut && workPlanHour !== "-" && !isNaN(Number(att.totalHours)) && !isNaN(Number(workPlanHour))) {
+      // กรณีมีเวลาเข้า-ออกครบ (และไม่ขาดงาน)
+      const diff = parseFloat(att.totalHours) - parseFloat(workPlanHour);
+      workDiff = diff > 0 ? toHourMinute(diff) : "0:00";
+      workActual = toHourMinute(att.totalHours);
+    } else if (att && !att.isAbsent && (hasClockIn || hasClockOut) && !isNaN(Number(att.totalHours))) {
+      // กรณีมี clockin หรือ clockout ฝั่งเดียว (ถือว่ายังไม่จบวัน/Incomplete)
+      workActual = toHourMinute(att.totalHours);
+      workDiff = "-";
+    }
+    // ถ้าขาดงาน หรือไม่มี attendance, workDiff = "-" แล้วตามค่า default
 
     return {
       name: userName,
       department,
       position,
       date: displayDate,
-      checkin_plan: "08:00",
+      checkin_plan: checkinPlan,
       checkin_actual: att?.clockIn || "",
       checkin_note: att?.isLate ? `มาสาย ${att.lateMinutes} นาที` : "",
-      checkout_plan: "17:00",
+      checkout_plan: checkoutPlan,
       checkout_actual: att?.clockOut || "",
       checkout_note: "",
-      work_plan: "08:00",
-      work_actual: att ? att.totalHours.toFixed(2) : "00:00",
-      work_diff: att ? workDiff : "-08:00",
+      work_plan: workPlanHour,
+      work_actual: workActual,
+      work_diff: workDiff,
       summary,
     };
   });
-}
+} // ------- [Comment] แก้ไข: ปิด function buildAttendanceRows ตรงนี้ (mock data ต้องอยู่นอก function นี้)
 
-
+// ------- [Comment] แก้ไข: ส่วนนี้ ย้ายออกมาอยู่นอก buildAttendanceRows -----
 
 // --- กำหนดเดือนและปีปัจจุบัน ---
-
 const months = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
@@ -159,146 +228,78 @@ for (let y = currentYear - 5; y <= currentYear + 2; y++) {
   years.push(y);
 }
 
-
-// --- mock ข้อมูล attendance และ holiday ---
-const attendances = [
-  {
-    id: 2,
-    userId: 8,
-    date: "2025-07-30",
-    clockIn: "08:22",
-    clockOut: "17:30",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.08,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 3,
-    userId: 8,
-    date: "2025-07-29",
-    clockIn: "08:25",
-    clockOut: "17:35",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.1,
-    overtimeHours: 5,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 4,
-    userId: 8,
-    date: "2025-07-28",
-    clockIn: "08:27",
-    clockOut: "17:30",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.03,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 5,
-    userId: 8,
-    date: "2025-07-25",
-    clockIn: "08:29",
-    clockOut: "17:30",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.01,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 6,
-    userId: 8,
-    date: "2025-07-24",
-    clockIn: "08:21",
-    clockOut: "17:30",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.09,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 7,
-    userId: 8,
-    date: "2025-07-23",
-    clockIn: "08:22",
-    clockOut: "17:30",
-    isLate: false,
-    lateMinutes: 0,
-    isAbsent: false,
-    totalHours: 9.08,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  },
-  {
-    id: 8,
-    userId: 8,
-    date: "2025-07-22",
-    clockIn: "08:35",
-    clockOut: "17:30",
-    isLate: true,
-    lateMinutes: 5,
-    isAbsent: false,
-    totalHours: 8.55,
-    overtimeHours: 0,
-    status: "COMPLETED",
-    workPolicyId: 1,
-    shiftId: null
-  }
-];
-
-const holidays = [
-  { date: "2025-07-20", name: "วันอาสาฬหบูชา" },
-  { date: "2025-07-21", name: "วันเข้าพรรษา" }
-];
-
-// --- Gen ข้อมูล row ---
-const data = buildAttendanceRows({
-  attendances,
-  holidays,
-  year: 2025,
-  month: 6, // กรกฎาคม = 6 (0-based)
-  userName: "Persis",
-  department: "-",
-  position: "-"
-});
-
 // --- หน้าหลัก ---
 function AttendancePage() {
+  const user = useUserStore((state) => state.user);
+  const [profile, setProfile] = useState(null);
+
+  const userId = user?.id;
+  const [attendances, setAttendances] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const accessToken = useUserStore((state) => state.accessToken);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [holidays, setHolidays] = useState([]);
 
+  async function fetchAllholiday() {
+    const res = await employeeApi.fetchAllholiday(selectedMonth + 1, selectedYear); 
+    setHolidays(res.data.holiday);
+    return res.data.holiday || [];
+  }
+
+
+  useEffect(() => {
+    fetchAllholiday()
+
+    if (user?.id) {
+      employeeApi.getMyProfile(user.id)
+        .then(res => setProfile(res.data.employeeProfile || res.data))
+        .catch(() => setProfile(null));
+    }
+    if (!user || !accessToken) {
+      navigate("/login");
+    }
+    if (!userId) return;
+    setLoading(true);
+    employeeApi.getAttendance(userId, selectedMonth + 1, selectedYear)
+      .then(res => {
+        setAttendances(res.data.attendances || []);
+      })
+      .catch(err => {
+        setAttendances([]);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedMonth, selectedYear, user, accessToken, navigate, user?.id]);
+
+  let checkinPlan = "-";
+  let checkoutPlan = "-";
+  let workPlanHour = "-";
+  if (profile) {
+    if (profile.shift) {
+      checkinPlan = profile.shift.inTime;
+      checkoutPlan = profile.shift.outTime;
+    } else if (profile.workPolicy) {
+      checkinPlan = profile.workPolicy.startTime;
+      checkoutPlan = profile.workPolicy.endTime;
+    }
+    workPlanHour = calcHourDiff(checkinPlan, checkoutPlan);
+
+  }
+  // --- Gen ข้อมูล row ---
   const data = buildAttendanceRows({
     attendances,
-    holidays,
+    holidays: holidays || [],
     year: selectedYear,
     month: selectedMonth,
-    userName: "Persis",
-    department: "-",
-    position: "-"
+    userName: user?.name || "-",
+    department: user?.department || "-",
+    position: user?.role || "-",
+    checkinPlan,
+    checkoutPlan,
+    workPlanHour,
   });
+
   return (
     <div className="w-full px-2 sm:px-8 py-4 sm:py-8">
       <div className="mx-auto max-w-[1200px]">

@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export function AttendanceTable({ data }) {
   return (
     <div className="overflow-x-auto w-full">
-      <Table className="min-w-[900px]">
+      <Table className="min-w-[900px] border border-gray-200">
         <TableHeader>
           {/* หัวตารางชั้นบน (หมวดหมู่) */}
           <TableRow>
@@ -26,8 +26,8 @@ export function AttendanceTable({ data }) {
             <TableHead className="text-center bg-green-50 border border-gray-300">ออกจริง</TableHead>
             <TableHead className="text-center bg-green-50 border border-gray-300">หมายเหตุ</TableHead>
             <TableHead className="text-center bg-purple-50 border border-gray-300">กำหนด</TableHead>
-            <TableHead className="text-center bg-purple-50 border border-gray-300">เวลาจริง</TableHead>
-            <TableHead className="text-center bg-purple-50 border border-gray-300">ส่วนต่าง</TableHead>
+            <TableHead className="text-center bg-purple-50 border border-gray-300">เวลาทำงานจริง</TableHead>
+            <TableHead className="text-center bg-purple-50 border border-gray-300">OT</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -44,45 +44,49 @@ export function AttendanceTable({ data }) {
             //           : ""
             // }>
             //hover color gray-100
-            <TableRow key={idx} className={"hover:bg-gray-100 transition-colors duration-200"}>
-              <TableCell>{row.name}</TableCell>
-              <TableCell>{row.department}</TableCell>
-              <TableCell>{row.position}</TableCell>
+            <TableRow key={idx} className={"hover:bg-gray-100 transition-colors duration-200 border border-gray-300"}>
+              <TableCell className={"border border-gray-200"}>{row.name}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.department}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.position}</TableCell>
               <TableCell>{row.date}</TableCell>
               {/* เข้างาน */}
-              <TableCell>{row.checkin_plan}</TableCell>
-              <TableCell>{row.checkin_actual}</TableCell>
-              <TableCell>{row.checkin_note}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkin_plan}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkin_actual}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkin_note}</TableCell>
               {/* ออกงาน */}
-              <TableCell>{row.checkout_plan}</TableCell>
-              <TableCell>{row.checkout_actual}</TableCell>
-              <TableCell>{row.checkout_note}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkout_plan}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkout_actual}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.checkout_note}</TableCell>
               {/* ระยะเวลา */}
-              <TableCell>{row.work_plan}</TableCell>
-              <TableCell>{row.work_actual}</TableCell>
-              <TableCell>{row.work_diff}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.work_plan}</TableCell>
+              <TableCell className={"text-center border border-gray-200"}>{row.work_actual}</TableCell>
+              <TableCell className={"border border-gray-200"}>{row.work_diff}</TableCell>
               {/* ภาพรวม */}
               <TableCell>
                 <span
                   className={
                     row.summary === "ขาดงาน"
                       ? "inline-block px-2 py-1 rounded bg-red-200 text-red-700 text-xs"
-                      : row.summary === "วันหยุด" || row.summary.includes("อาสาฬหบูชา") || row.summary.includes("เข้าพรรษา")
-                        ? "inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs"
-                        : row.summary === "มาสาย"
-                          ? "inline-block px-2 py-1 rounded bg-orange-200 text-orange-800 text-xs"
-                          : row.summary === "ปกติ"
-                            ? "inline-block px-2 py-1 rounded bg-green-200 text-green-700 text-xs "
-                            : ""
+                      : row.summary === "มาสาย"
+                        ? "inline-block px-2 py-1 rounded bg-orange-200 text-orange-800 text-xs"
+                        : row.summary === "ปกติ"
+                          ? "inline-block px-2 py-1 rounded bg-green-200 text-green-700 text-xs"
+                          : row.summary === "รอประมวลผล"
+                            ? "inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs"
+                            : row.summary === "ลา"
+                              ? "inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs"
+                              // <<<< ทุกอย่างที่เหลือ (ถือเป็นวันหยุด/holiday)
+                              : "inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs"
+
                   }
                 >
-                  {row.summary}
-                </span>
-              </TableCell>
+                {row.summary}
+              </span>
+            </TableCell>
             </TableRow>
           ))}
-        </TableBody>
-      </Table >
+      </TableBody>
+    </Table >
     </div >
   );
 }
