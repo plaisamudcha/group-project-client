@@ -1,4 +1,7 @@
 import * as React from "react";
+
+import { SearchForm } from "@/components/search-form";
+import { VersionSwitcher } from "@/components/version-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +13,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
 import useUserStore from "@/src/stores/useUserStore.js";
 import { Link, useLocation } from "react-router";
@@ -33,6 +35,7 @@ import {
   Star
 } from "lucide-react";
 
+// This is sample data.
 const adminMenu = {
   navMain: [
     {
@@ -54,7 +57,7 @@ const adminMenu = {
         },
         {
           title: "Attendance",
-          url: "/admin/attendance",
+          url: "/admin/attendances",
           icon: Clock,
           color: "text-purple-600"
         },
@@ -152,8 +155,12 @@ export function AppSidebar({ ...props }) {
   const location = useLocation();
 
   const userRole = user?.role || "EMPLOYEE";
-  const finalMenuList = userRole === "HR" ? adminMenu : employeeMenu;
-  const iconMap = userRole === "HR" ? adminIcons : employeeIcons;
+  const finalMenuList =
+    userRole === "HR"
+      ? adminMenu
+      : userRole === "EMPLOYEE"
+      ? employeeMenu
+      : null;
 
   return (
     <Sidebar {...props} className="border-r-2 border-blue-100 bg-gradient-to-b from-white to-blue-50/3">
