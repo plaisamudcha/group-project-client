@@ -48,7 +48,29 @@ const admintoApi = {
   // Audit Log APIs
   fetchAuditLogs: () => {
     return privateApi.get('/audit-logs');
-  }
+  }, 
+  
+  // Leave Request APIs
+  getAllLeaveRequst: () => {
+    return privateApi.get("/leaves")
+  }, updateLeaveStatus: (id, status) => {
+    return privateApi.put(`/leaves/${id}/status`, status)
+  }, getAllShifts: () => {
+    return privateApi.get("/shifts");
+  },
+  createShift: (body) => {
+     console.log(body)
+    return privateApi.post("/shifts", body);
+  },
+  updateShift: (id, body) => {
+    return privateApi.put(`/shifts/${id}`, body);
+  },
+  assignEmployeeToShift: (body) => {
+    return privateApi.post("/shifts/assign-employee", body);
+  },
+  removeEmployeeFromShift: (body) => {
+    return privateApi.post("/shifts/remove-employee", body);
+  },
 };
 
 export default admintoApi;

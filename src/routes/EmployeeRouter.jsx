@@ -12,9 +12,6 @@ const ProfilePage = lazy(() => import("../pages/EmployeePages/ProfilePage"));
 const RequestLeavePage = lazy(() =>
   import("../pages/EmployeePages/RequestLeavePage")
 );
-const LeaveEntitlementPage = lazy(() =>
-  import("../pages/EmployeePages/LeaveEntitlementPage")
-);
 const MyLeaveRequestPage = lazy(() =>
   import("../pages/EmployeePages/MyLeaveRequestPage")
 );
@@ -47,10 +44,6 @@ const EmployeeRouter = createBrowserRouter([
       {
         path: "leave-requests",
         Component: MyLeaveRequestPage,
-      },
-      {
-        path: "entitlement",
-        Component: LeaveEntitlementPage,
       },
       {
         path: "holidays",

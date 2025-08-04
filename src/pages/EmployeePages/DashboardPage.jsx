@@ -77,14 +77,14 @@ export function DashboardPage() {
 
   const getStatusBadge = (status) => {
     const variants = {
-      Approved: "success",
-      Pending: "default",
-      Rejected: "destructive",
+      APPROVED: "success",
+      PENDING: "default",
+      REJECTED: "destructive",
     };
     const icons = {
-      Approved: <CheckCircle className="mr-1 h-3 w-3" />,
-      Pending: <Clock className="mr-1 h-3 w-3" />,
-      Rejected: <XCircle className="mr-1 h-3 w-3" />,
+      APPROVED: <CheckCircle className="mr-1 h-3 w-3" />,
+      PENDING: <Clock className="mr-1 h-3 w-3" />,
+      REJECTED: <XCircle className="mr-1 h-3 w-3" />,
     };
     return (
       <Badge variant={variants[status] || "outline"}>
@@ -137,9 +137,10 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {dashboardData.entitlements.map((item, index) => {
             const total = item.entitledDays;
-            const used = item.leaveDaysUsed || 0;
+            const used = item.usedDays || 0; // ✅ ใช้จาก backend
             const remaining = total - used;
             const percentage = total > 0 ? (used / total) * 100 : 0;
+
             return (
               <Card key={index}>
                 <CardHeader>
@@ -211,7 +212,7 @@ export function DashboardPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan="3" className="text-center h-24">
+                    <TableCell colSpan={3} className="text-center h-24">
                       ไม่พบข้อมูลใบลา
                     </TableCell>
                   </TableRow>
