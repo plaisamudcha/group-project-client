@@ -60,19 +60,19 @@ function LeaveEntitlementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
-  
+
   const [isSingleDialog, setIsSingleDialog] = useState(false);
   const [isBulkDialog, setIsBulkDialog] = useState(false);
   const [toDelete, setToDelete] = useState(null);
-  
+
   const [editingEntitlement, setEditingEntitlement] = useState(null);
   const [formState, setFormState] = useState({});
   const [bulkFormState, setBulkFormState] = useState({
-      VACATION: 14,
-      PERSONAL: 14,
-      SICK: 30,
-      MATERNITY: 90,
-      UNPAID: 90,
+    VACATION: 14,
+    PERSONAL: 14,
+    SICK: 30,
+    MATERNITY: 90,
+    UNPAID: 90,
   });
 
   const [eligibleUsers, setEligibleUsers] = useState([]);
@@ -91,13 +91,13 @@ function LeaveEntitlementPage() {
         const entitlementsForYear = userEntitlements.filter(e => e.year === parseInt(selectedYear));
         const leaves = entitlementsForYear.length > 0
           ? Object.keys(LEAVE_TYPES).map(leaveKey => {
-              const entitlement = entitlementsForYear.find(e => e.leaveType === leaveKey);
-              return {
-                type: leaveKey,
-                used: entitlement?.usedDays || 0,
-                total: entitlement?.entitledDays || 0,
-              };
-            })
+            const entitlement = entitlementsForYear.find(e => e.leaveType === leaveKey);
+            return {
+              type: leaveKey,
+              used: entitlement?.usedDays || 0,
+              total: entitlement?.entitledDays || 0,
+            };
+          })
           : [];
 
         return {
@@ -150,42 +150,42 @@ function LeaveEntitlementPage() {
 
   const handleSave = async () => {
     const isEditing = !!editingEntitlement;
-    
+
     if (!isEditing && !selectedNewUserId) {
-        toast.warn("กรุณาเลือกพนักงาน");
-        return;
+      toast.warn("กรุณาเลือกพนักงาน");
+      return;
     }
 
     const entitlementsPayload = Object.entries(formState).map(([leaveType, entitledDays]) => ({
-        leaveType,
-        entitledDays: Number(entitledDays),
+      leaveType,
+      entitledDays: Number(entitledDays),
     }));
 
     const payload = {
-        userId: isEditing ? editingEntitlement.id : parseInt(selectedNewUserId),
-        year: parseInt(selectedYear),
-        entitlements: entitlementsPayload,
+      userId: isEditing ? editingEntitlement.id : parseInt(selectedNewUserId),
+      year: parseInt(selectedYear),
+      entitlements: entitlementsPayload,
     };
 
     try {
-        if (isEditing) {
-            if (editingEntitlement.leaves.length > 0) {
-                await admintoApi.updateEntitlements(payload);
-            } else {
-                await admintoApi.createEntitlements(payload);
-            }
+      if (isEditing) {
+        if (editingEntitlement.leaves.length > 0) {
+          await admintoApi.updateEntitlements(payload);
         } else {
-             await admintoApi.createEntitlements(payload);
+          await admintoApi.createEntitlements(payload);
         }
+      } else {
+        await admintoApi.createEntitlements(payload);
+      }
 
-        await loadData();
-        
-        setIsSingleDialog(false);
-        setEditingEntitlement(null);
-        toast.success("บันทึกข้อมูลสำเร็จ!");
+      await loadData();
+
+      setIsSingleDialog(false);
+      setEditingEntitlement(null);
+      toast.success("บันทึกข้อมูลสำเร็จ!");
     } catch (err) {
-        console.error("เกิดข้อผิดพลาดในการบันทึก:", err);
-        toast.error("ไม่สามารถบันทึกข้อมูลได้: " + (err.response?.data?.message || err.message));
+      console.error("เกิดข้อผิดพลาดในการบันทึก:", err);
+      toast.error("ไม่สามารถบันทึกข้อมูลได้: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -196,30 +196,30 @@ function LeaveEntitlementPage() {
   const handleBulkCreate = async () => {
     const employeesToUpdate = entitlements.filter(e => e.leaves.length === 0);
     if (employeesToUpdate.length === 0) {
-        toast.info("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
-        return;
+      toast.info("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
+      return;
     }
 
     const userIds = employeesToUpdate.map(emp => emp.id);
     const entitlementsPayload = Object.entries(bulkFormState).map(([leaveType, entitledDays]) => ({
-        leaveType,
-        entitledDays: Number(entitledDays),
+      leaveType,
+      entitledDays: Number(entitledDays),
     }));
 
     const payload = {
-        year: parseInt(selectedYear),
-        userIds: userIds,
-        entitlements: entitlementsPayload,
+      year: parseInt(selectedYear),
+      userIds: userIds,
+      entitlements: entitlementsPayload,
     };
 
     try {
-        await admintoApi.createBulkEntitlements(payload);
-        await loadData();
-        setIsBulkDialog(false);
-        toast.success(`สร้างโควต้าสำหรับพนักงาน ${userIds.length} คนสำเร็จ`);
+      await admintoApi.createBulkEntitlements(payload);
+      await loadData();
+      setIsBulkDialog(false);
+      toast.success(`สร้างโควต้าสำหรับพนักงาน ${userIds.length} คนสำเร็จ`);
     } catch (err) {
-        console.error("เกิดข้อผิดพลาดในการสร้างโควต้าแบบกลุ่ม:", err);
-        toast.error("ไม่สามารถสร้างโควต้าได้: " + (err.response?.data?.message || err.message));
+      console.error("เกิดข้อผิดพลาดในการสร้างโควต้าแบบกลุ่ม:", err);
+      toast.error("ไม่สามารถสร้างโควต้าได้: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -227,16 +227,16 @@ function LeaveEntitlementPage() {
     if (!toDelete) return;
 
     try {
-        await admintoApi.deleteUserEntitlements(toDelete.id, toDelete.year);
-        await loadData();
-        setToDelete(null);
-        toast.success("ลบข้อมูลสำเร็จ!");
+      await admintoApi.deleteUserEntitlements(toDelete.id, toDelete.year);
+      await loadData();
+      setToDelete(null);
+      toast.success("ลบข้อมูลสำเร็จ!");
     } catch (err) {
-        console.error("เกิดข้อผิดพลาดในการลบ:", err);
-        toast.error("ไม่สามารถลบข้อมูลได้: " + (err.response?.data?.message || err.message));
+      console.error("เกิดข้อผิดพลาดในการลบ:", err);
+      toast.error("ไม่สามารถลบข้อมูลได้: " + (err.response?.data?.message || err.message));
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -260,11 +260,11 @@ function LeaveEntitlementPage() {
         <h1 className="text-3xl font-bold text-gray-800">Leave Entitlements</h1>
         <p className="text-muted-foreground">เพิ่ม แก้ไข และดูภาพรวมโควตาวันลาของพนักงาน</p>
       </header>
-      
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-4">
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
               {availableYears.map(year => (
                 <SelectItem key={year} value={String(year)}>{year}</SelectItem>
@@ -273,13 +273,13 @@ function LeaveEntitlementPage() {
           </Select>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleOpenSingleDialog()} disabled={eligibleUsers.length === 0}>
-                <PlusCircle className="mr-2 h-4 w-4" />เพิ่มรายคน
-            </Button>
-            <Button onClick={() => setIsBulkDialog(true)}>
-                <Users className="mr-2 h-4 w-4" />สร้างโควต้าแบบกลุ่ม
-                {pendingEmployeesCount > 0 && <Badge variant="secondary" className="ml-2">{pendingEmployeesCount}</Badge>}
-            </Button>
+          <Button variant="outline" onClick={() => handleOpenSingleDialog()} disabled={eligibleUsers.length === 0}>
+            <PlusCircle className="mr-2 h-4 w-4" />เพิ่มรายคน
+          </Button>
+          <Button onClick={() => setIsBulkDialog(true)}>
+            <Users className="mr-2 h-4 w-4" />สร้างโควต้าแบบกลุ่ม
+            {pendingEmployeesCount > 0 && <Badge variant="secondary" className="ml-2">{pendingEmployeesCount}</Badge>}
+          </Button>
         </div>
       </div>
 
@@ -317,10 +317,10 @@ function LeaveEntitlementPage() {
                     <Button variant="ghost" size="icon" onClick={() => handleOpenSingleDialog(item)}>
                       <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-red-500 hover:text-red-600" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-600"
                       onClick={() => setToDelete(item)}
                       disabled={item.leaves.length === 0}
                     >
@@ -338,96 +338,96 @@ function LeaveEntitlementPage() {
 
       <Dialog open={isSingleDialog} onOpenChange={setIsSingleDialog}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{editingEntitlement ? (editingEntitlement.leaves.length > 0 ? `แก้ไขโควต้า: ${editingEntitlement.employeeName}` : `สร้างโควต้าสำหรับ: ${editingEntitlement.employeeName}`) : 'เพิ่มโควต้าพนักงานใหม่'}</DialogTitle>
-                <DialogDescription>
-                    กำหนดจำนวนวันลาสำหรับปี {selectedYear}
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2 flex-col flex">
-                {!editingEntitlement && (
-                    <div className="flex justify-between items-center">
-                        <Label htmlFor="employeeName" className="font-semibold text-base">ชื่อพนักงาน</Label>
-                        <Select value={selectedNewUserId} onValueChange={setSelectedNewUserId}>
-                            <SelectTrigger className="basis-2/4">
-                                <SelectValue placeholder="เลือกพนักงาน..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {eligibleUsers.map(user => (
-                                    <SelectItem key={user.id} value={String(user.id)}>
-                                        {user.employeeName}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
-                {Object.entries(LEAVE_TYPES).map(([key, name]) => (
-                    <div key={key} className="flex justify-between items-center">
-                        <Label htmlFor={key} className="font-semibold text-base">{name}</Label>
-                        <Input 
-                            id={key}
-                            type="number"
-                            className="basis-2/4"
-                            value={formState[key] || 0}
-                            onChange={(e) => handleFormChange(key, e.target.value)}
-                            min="0"
-                        />
-                    </div>
-                ))}
-            </div>
-            <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    ยกเลิก
-                  </Button>
-                </DialogClose>
-                <Button onClick={handleSave}>บันทึก</Button>
-            </DialogFooter>
+          <DialogHeader>
+            <DialogTitle>{editingEntitlement ? (editingEntitlement.leaves.length > 0 ? `แก้ไขโควต้า: ${editingEntitlement.employeeName}` : `สร้างโควต้าสำหรับ: ${editingEntitlement.employeeName}`) : 'เพิ่มโควต้าพนักงานใหม่'}</DialogTitle>
+            <DialogDescription>
+              กำหนดจำนวนวันลาสำหรับปี {selectedYear}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2 flex-col flex">
+            {!editingEntitlement && (
+              <div className="flex justify-between items-center">
+                <Label htmlFor="employeeName" className="font-semibold text-base">ชื่อพนักงาน</Label>
+                <Select value={selectedNewUserId} onValueChange={setSelectedNewUserId}>
+                  <SelectTrigger className="basis-2/4">
+                    <SelectValue placeholder="เลือกพนักงาน..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {eligibleUsers.map(user => (
+                      <SelectItem key={user.id} value={String(user.id)}>
+                        {user.employeeName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {Object.entries(LEAVE_TYPES).map(([key, name]) => (
+              <div key={key} className="flex justify-between items-center">
+                <Label htmlFor={key} className="font-semibold text-base">{name}</Label>
+                <Input
+                  id={key}
+                  type="number"
+                  className="basis-2/4"
+                  value={formState[key] || 0}
+                  onChange={(e) => handleFormChange(key, e.target.value)}
+                  min="0"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                ยกเลิก
+              </Button>
+            </DialogClose>
+            <Button onClick={handleSave}>บันทึก</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isBulkDialog} onOpenChange={setIsBulkDialog}>
         <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-                <DialogTitle className="text-xl">🚀 สร้างโควต้าวันลาสำหรับปี {selectedYear}</DialogTitle>
-                <DialogDescription>กำหนดโควต้ามาตรฐานให้กับพนักงาน {pendingEmployeesCount} คนที่ยังไม่มีข้อมูลในปีที่เลือก</DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-6">
-                <div className="space-y-3">
-                    <Label className="font-semibold text-base">1. กำหนดจำนวนวันลามาตรฐาน</Label>
-                    <div className="flex flex-col gap-2">
-                        {Object.entries(LEAVE_TYPES).map(([key, name]) => (
-                             <div key={key} className="flex justify-between items-center">
-                                <Label htmlFor={`bulk-${key}`}>{name}</Label>
-                                <Input 
-                                    id={`bulk-${key}`}
-                                    type="number" 
-                                    value={bulkFormState[key]}
-                                    onChange={(e) => handleBulkFormChange(key, e.target.value)}
-                                    min="0"
-                                    className="basis-2/4"
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="space-y-3">
-                    <Label className="font-semibold text-base">2. กลุ่มพนักงานเป้าหมาย</Label>
-                    <RadioGroup defaultValue="all-pending" disabled>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="all-pending" id="r1" />
-                            <Label htmlFor="r1">พนักงานทุกคนที่ยังไม่มีโควต้า ({pendingEmployeesCount} คน)</Label>
-                        </div>
-                    </RadioGroup>
-                </div>
+          <DialogHeader>
+            <DialogTitle className="text-xl">🚀 สร้างโควต้าวันลาสำหรับปี {selectedYear}</DialogTitle>
+            <DialogDescription>กำหนดโควต้ามาตรฐานให้กับพนักงาน {pendingEmployeesCount} คนที่ยังไม่มีข้อมูลในปีที่เลือก</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-6">
+            <div className="space-y-3">
+              <Label className="font-semibold text-base">1. กำหนดจำนวนวันลามาตรฐาน</Label>
+              <div className="flex flex-col gap-2">
+                {Object.entries(LEAVE_TYPES).map(([key, name]) => (
+                  <div key={key} className="flex justify-between items-center">
+                    <Label htmlFor={`bulk-${key}`}>{name}</Label>
+                    <Input
+                      id={`bulk-${key}`}
+                      type="number"
+                      value={bulkFormState[key]}
+                      onChange={(e) => handleBulkFormChange(key, e.target.value)}
+                      min="0"
+                      className="basis-2/4"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <DialogFooter>
-                <Button variant="secondary" onClick={() => setIsBulkDialog(false)}>ยกเลิก</Button>
-                <Button onClick={handleBulkCreate} disabled={pendingEmployeesCount === 0}>
-                    {pendingEmployeesCount > 0 ? `ยืนยันและสร้าง ${pendingEmployeesCount} โควต้า` : 'ไม่พบพนักงานให้สร้าง'}
-                </Button>
-            </DialogFooter>
+            <div className="space-y-3">
+              <Label className="font-semibold text-base">2. กลุ่มพนักงานเป้าหมาย</Label>
+              <RadioGroup defaultValue="all-pending" disabled>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all-pending" id="r1" />
+                  <Label htmlFor="r1">พนักงานทุกคนที่ยังไม่มีโควต้า ({pendingEmployeesCount} คน)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsBulkDialog(false)}>ยกเลิก</Button>
+            <Button onClick={handleBulkCreate} disabled={pendingEmployeesCount === 0}>
+              {pendingEmployeesCount > 0 ? `ยืนยันและสร้าง ${pendingEmployeesCount} โควต้า` : 'ไม่พบพนักงานให้สร้าง'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
