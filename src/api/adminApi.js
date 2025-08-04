@@ -43,6 +43,11 @@ const admintoApi = {
   },
   deleteUserEntitlements: (userId, year) => {
     return privateApi.delete(`/aunnual-leave/user/${userId}/year/${year}`);
+  },
+
+  // Audit Log APIs
+  fetchAuditLogs: () => {
+    return privateApi.get('/audit-logs');
   }
 };
 
