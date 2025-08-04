@@ -1,5 +1,7 @@
 import { privateApi } from "./baseApi";
+
 const admintoApi = {
+  // Holiday APIs
   fetchAllholiday: () => {
     return privateApi.get("/holidays")
   },
@@ -11,9 +13,26 @@ const admintoApi = {
   },
   updateHoliday: (id, body) => {
     return privateApi.put(`/holidays/${id}`, body);
-  }, getAllUser: () => {
+  },
+
+  // Work Policy APIs
+  fetchPolicies: async () => {
+    return await privateApi.get("/work-policies");
+  },
+  createPolicy: async (data) => {
+    return await privateApi.post("/work-policies", data);
+  },
+  updatePolicy: async (id, data) => {
+    return await privateApi.put(`/work-policies/${id}`, data);
+  },
+
+  // User APIs
+  getAllUser: () => {
     return privateApi.get('/users')
-  }, createEntitlements: (payload) => {
+  },
+
+  // Annual Leave APIs
+  createEntitlements: (payload) => {
     return privateApi.post('/aunnual-leave/create', payload);
   },
   updateEntitlements: (payload) => {
@@ -24,7 +43,15 @@ const admintoApi = {
   },
   deleteUserEntitlements: (userId, year) => {
     return privateApi.delete(`/aunnual-leave/user/${userId}/year/${year}`);
-  }, getAllLeaveRequst: () => {
+  },
+
+  // Audit Log APIs
+  fetchAuditLogs: () => {
+    return privateApi.get('/audit-logs');
+  }, 
+  
+  // Leave Request APIs
+  getAllLeaveRequst: () => {
     return privateApi.get("/leaves")
   }, updateLeaveStatus: (id, status) => {
     return privateApi.put(`/leaves/${id}/status`, status)
@@ -44,6 +71,11 @@ const admintoApi = {
   removeEmployeeFromShift: (body) => {
     return privateApi.post("/shifts/remove-employee", body);
   },
+
+  //Attendances APIs
+  getAllAttendance: () => {
+    return privateApi.get("/attendance/all");
+  }
 };
 
 export default admintoApi;

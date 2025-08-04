@@ -57,7 +57,7 @@ const adminMenu = {
         },
         {
           title: "Attendance",
-          url: "/admin/attendance",
+          url: "/admin/attendances",
           icon: Clock,
           color: "text-purple-600"
         },

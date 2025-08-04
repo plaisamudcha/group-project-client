@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -37,11 +38,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import admintoApi from "@/src/api/adminApi";
-import { Loader2, Pencil, PlusCircle, Trash2, Users, XCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from 'react-toastify';
+import { 
+  Loader2, 
+  Pencil, 
+  PlusCircle, 
+  Trash2, 
+  Users, 
+  XCircle, 
+  Calendar,
+  UserCheck,
+  Clock,
+  TrendingUp,
+  RefreshCw,
+  FileText,
+  CheckCircle2
+} from "lucide-react";
+import admintoApi from "@/src/api/adminApi";
 
 // การกำหนดประเภทการลาแบบรวมศูนย์
 const LEAVE_TYPES = {
@@ -58,6 +71,8 @@ const availableYears = [currentYear - 1, currentYear, currentYear + 1];
 function LeaveEntitlementPage() {
   const [entitlements, setEntitlements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
 
@@ -79,12 +94,12 @@ function LeaveEntitlementPage() {
   const [selectedNewUserId, setSelectedNewUserId] = useState("");
 
   const loadData = async () => {
-    setIsLoading(true);
-    setError(null);
     try {
+      setIsLoading(true);
+      setError(null);
+
       const response = await admintoApi.getAllUser();
       const users = response.data.users;
-      console.log(users);
 
       const processedData = users.map(user => {
         const userEntitlements = user.annualLeaveEntitlements || [];
@@ -126,7 +141,19 @@ function LeaveEntitlementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
+  const handleRefresh = () => {
+    loadData();
+  };
+
   const pendingEmployeesCount = entitlements.filter(e => e.leaves.length === 0).length;
+  const totalEmployees = entitlements.length;
+  const employeesWithQuota = entitlements.filter(e => e.leaves.length > 0).length;
+  
+  // คำนวณวันลาเฉลี่ย
+  const avgLeaveDays = entitlements.filter(e => e.leaves.length > 0).reduce((sum, emp) => {
+    const totalDays = emp.leaves.reduce((total, leave) => total + leave.total, 0);
+    return sum + totalDays;
+  }, 0) / Math.max(employeesWithQuota, 1);
 
   const getLeaveData = (leaves, type) => {
     return leaves.find(l => l.type === type) || { used: 0, total: 0 };
@@ -149,12 +176,16 @@ function LeaveEntitlementPage() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+    
     const isEditing = !!editingEntitlement;
 
     if (!isEditing && !selectedNewUserId) {
-      toast.warn("กรุณาเลือกพนักงาน");
+      alert("กรุณาเลือกพนักงาน");
       return;
     }
+
+    setIsSaving(true);
 
     const entitlementsPayload = Object.entries(formState).map(([leaveType, entitledDays]) => ({
       leaveType,
@@ -179,13 +210,13 @@ function LeaveEntitlementPage() {
       }
 
       await loadData();
-
       setIsSingleDialog(false);
       setEditingEntitlement(null);
-      toast.success("บันทึกข้อมูลสำเร็จ!");
     } catch (err) {
       console.error("เกิดข้อผิดพลาดในการบันทึก:", err);
-      toast.error("ไม่สามารถบันทึกข้อมูลได้: " + (err.response?.data?.message || err.message));
+      alert("ไม่สามารถบันทึกข้อมูลได้: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -194,11 +225,15 @@ function LeaveEntitlementPage() {
   };
 
   const handleBulkCreate = async () => {
+    if (isSaving) return;
+    
     const employeesToUpdate = entitlements.filter(e => e.leaves.length === 0);
     if (employeesToUpdate.length === 0) {
-      toast.info("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
+      alert("ไม่พบพนักงานที่รอการสร้างโควต้าในปีที่เลือก");
       return;
     }
+
+    setIsSaving(true);
 
     const userIds = employeesToUpdate.map(emp => emp.id);
     const entitlementsPayload = Object.entries(bulkFormState).map(([leaveType, entitledDays]) => ({
@@ -216,235 +251,446 @@ function LeaveEntitlementPage() {
       await admintoApi.createBulkEntitlements(payload);
       await loadData();
       setIsBulkDialog(false);
-      toast.success(`สร้างโควต้าสำหรับพนักงาน ${userIds.length} คนสำเร็จ`);
     } catch (err) {
       console.error("เกิดข้อผิดพลาดในการสร้างโควต้าแบบกลุ่ม:", err);
-      toast.error("ไม่สามารถสร้างโควต้าได้: " + (err.response?.data?.message || err.message));
+      alert("ไม่สามารถสร้างโควต้าได้: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!toDelete) return;
+    if (!toDelete || isDeleting) return;
 
+    setIsDeleting(true);
     try {
       await admintoApi.deleteUserEntitlements(toDelete.id, toDelete.year);
       await loadData();
       setToDelete(null);
-      toast.success("ลบข้อมูลสำเร็จ!");
     } catch (err) {
       console.error("เกิดข้อผิดพลาดในการลบ:", err);
-      toast.error("ไม่สามารถลบข้อมูลได้: " + (err.response?.data?.message || err.message));
+      alert("ไม่สามารถลบข้อมูลได้: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen text-red-500">
-        <XCircle className="h-10 w-10 mb-4" />
-        <h2 className="text-xl font-semibold">{error}</h2>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col justify-center items-center">
+        <div className="text-center">
+          <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Data</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button 
+            onClick={() => loadData()} 
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:px-24">
-      <header className="my-8">
-        <h1 className="text-3xl font-bold text-gray-800">Leave Entitlements</h1>
-        <p className="text-muted-foreground">เพิ่ม แก้ไข และดูภาพรวมโควตาวันลาของพนักงาน</p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto p-4 md:px-8 lg:px-12 max-w-7xl">
+        
+        {/* Header Section */}
+        <div className="mb-8 mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Leave Entitlements
+              </h1>
+              <p className="text-gray-600 mt-1 text-lg">
+                Manage employee leave quotas and track annual entitlements
+              </p>
+            </div>
+          </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {availableYears.map(year => (
-                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Total Employees</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{totalEmployees}</p>
+                </div>
+                <div className="p-3 bg-indigo-100 rounded-xl">
+                  <Users className="h-6 w-6 text-indigo-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">With Quota</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{employeesWithQuota}</p>
+                </div>
+                <div className="p-3 bg-green-100 rounded-xl">
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Pending Setup</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{pendingEmployeesCount}</p>
+                </div>
+                <div className="p-3 bg-orange-100 rounded-xl">
+                  <Clock className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Avg Leave Days</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{avgLeaveDays.toFixed(1)}</p>
+                </div>
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => handleOpenSingleDialog()} disabled={eligibleUsers.length === 0}>
-            <PlusCircle className="mr-2 h-4 w-4" />เพิ่มรายคน
-          </Button>
-          <Button onClick={() => setIsBulkDialog(true)}>
-            <Users className="mr-2 h-4 w-4" />สร้างโควต้าแบบกลุ่ม
-            {pendingEmployeesCount > 0 && <Badge variant="secondary" className="ml-2">{pendingEmployeesCount}</Badge>}
-          </Button>
-        </div>
-      </div>
 
-      <div className="border rounded-lg overflow-x-auto bg-white shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[200px]">พนักงาน</TableHead>
-              {Object.values(LEAVE_TYPES).map(name => (
-                <TableHead key={name} className="text-center min-w-[120px]">{name}</TableHead>
-              ))}
-              <TableHead className="text-right min-w-[100px]">จัดการ</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entitlements.length > 0 ? (
-              entitlements.map((item) => (
-                <TableRow key={item.id} className="hover:bg-muted/50">
-                  <TableCell>
-                    <div className="font-medium text-gray-800">{item.employeeName}</div>
-                  </TableCell>
-                  {Object.keys(LEAVE_TYPES).map(leaveKey => {
-                    const leaveData = getLeaveData(item.leaves, leaveKey);
-                    return (
-                      <TableCell key={leaveKey} className="text-center">
-                        {item.leaves.length > 0 ? (
-                          <span>{`${leaveData.used} / ${leaveData.total}`}</span>
-                        ) : (
-                          <Badge variant="outline">ยังไม่มีโควต้า</Badge>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenSingleDialog(item)}>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => setToDelete(item)}
-                      disabled={item.leaves.length === 0}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow><TableCell colSpan={Object.keys(LEAVE_TYPES).length + 2} className="h-24 text-center text-muted-foreground">ไม่พบข้อมูลพนักงาน</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={isSingleDialog} onOpenChange={setIsSingleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingEntitlement ? (editingEntitlement.leaves.length > 0 ? `แก้ไขโควต้า: ${editingEntitlement.employeeName}` : `สร้างโควต้าสำหรับ: ${editingEntitlement.employeeName}`) : 'เพิ่มโควต้าพนักงานใหม่'}</DialogTitle>
-            <DialogDescription>
-              กำหนดจำนวนวันลาสำหรับปี {selectedYear}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2 flex-col flex">
-            {!editingEntitlement && (
-              <div className="flex justify-between items-center">
-                <Label htmlFor="employeeName" className="font-semibold text-base">ชื่อพนักงาน</Label>
-                <Select value={selectedNewUserId} onValueChange={setSelectedNewUserId}>
-                  <SelectTrigger className="basis-2/4">
-                    <SelectValue placeholder="เลือกพนักงาน..." />
+        {/* Main Content */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          
+          {/* Toolbar */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-bold text-gray-900">Leave Quotas</h2>
+                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                  {selectedYear}
+                </Badge>
+                
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-28 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {eligibleUsers.map(user => (
-                      <SelectItem key={user.id} value={String(user.id)}>
-                        {user.employeeName}
-                      </SelectItem>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            )}
-            {Object.entries(LEAVE_TYPES).map(([key, name]) => (
-              <div key={key} className="flex justify-between items-center">
-                <Label htmlFor={key} className="font-semibold text-base">{name}</Label>
-                <Input
-                  id={key}
-                  type="number"
-                  className="basis-2/4"
-                  value={formState[key] || 0}
-                  onChange={(e) => handleFormChange(key, e.target.value)}
-                  min="0"
-                />
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                ยกเลิก
-              </Button>
-            </DialogClose>
-            <Button onClick={handleSave}>บันทึก</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog open={isBulkDialog} onOpenChange={setIsBulkDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl">🚀 สร้างโควต้าวันลาสำหรับปี {selectedYear}</DialogTitle>
-            <DialogDescription>กำหนดโควต้ามาตรฐานให้กับพนักงาน {pendingEmployeesCount} คนที่ยังไม่มีข้อมูลในปีที่เลือก</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-6">
-            <div className="space-y-3">
-              <Label className="font-semibold text-base">1. กำหนดจำนวนวันลามาตรฐาน</Label>
-              <div className="flex flex-col gap-2">
-                {Object.entries(LEAVE_TYPES).map(([key, name]) => (
-                  <div key={key} className="flex justify-between items-center">
-                    <Label htmlFor={`bulk-${key}`}>{name}</Label>
-                    <Input
-                      id={`bulk-${key}`}
-                      type="number"
-                      value={bulkFormState[key]}
-                      onChange={(e) => handleBulkFormChange(key, e.target.value)}
-                      min="0"
-                      className="basis-2/4"
-                    />
-                  </div>
-                ))}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleOpenSingleDialog()} 
+                  disabled={eligibleUsers.length === 0 || isLoading}
+                  className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Individual
+                </Button>
+                <Button 
+                  onClick={() => setIsBulkDialog(true)}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Bulk Create
+                  {pendingEmployeesCount > 0 && (
+                    <Badge variant="secondary" className="ml-2 bg-white text-indigo-700">
+                      {pendingEmployeesCount}
+                    </Badge>
+                  )}
+                </Button>
               </div>
             </div>
-            <div className="space-y-3">
-              <Label className="font-semibold text-base">2. กลุ่มพนักงานเป้าหมาย</Label>
-              <RadioGroup defaultValue="all-pending" disabled>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all-pending" id="r1" />
-                  <Label htmlFor="r1">พนักงานทุกคนที่ยังไม่มีโควต้า ({pendingEmployeesCount} คน)</Label>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50/50 hover:bg-gray-50">
+                  <TableHead className="font-bold text-gray-800 py-4 min-w-[200px]">Employee</TableHead>
+                  {Object.values(LEAVE_TYPES).map(name => (
+                    <TableHead key={name} className="text-center font-bold text-gray-800 min-w-[120px]">{name}</TableHead>
+                  ))}
+                  <TableHead className="text-center font-bold text-gray-800 min-w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={Object.keys(LEAVE_TYPES).length + 2} className="text-center py-12">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <span className="ml-2">Loading leave entitlements...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : entitlements.length > 0 ? (
+                  entitlements.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-indigo-50/50 transition-colors duration-200">
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">
+                              {item.employeeName.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{item.employeeName}</p>
+                            <p className="text-sm text-gray-500">Employee ID: {item.id}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      {Object.keys(LEAVE_TYPES).map(leaveKey => {
+                        const leaveData = getLeaveData(item.leaves, leaveKey);
+                        return (
+                          <TableCell key={leaveKey} className="text-center">
+                            {item.leaves.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium">{`${leaveData.used} / ${leaveData.total}`}</span>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full" 
+                                    style={{ width: `${Math.min((leaveData.used / Math.max(leaveData.total, 1)) * 100, 100)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                No Quota
+                              </Badge>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleOpenSingleDialog(item)}
+                            className="hover:bg-blue-100 hover:text-blue-700"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-red-100 hover:text-red-700"
+                            onClick={() => setToDelete(item)}
+                            disabled={item.leaves.length === 0}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={Object.keys(LEAVE_TYPES).length + 2} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                          <FileText className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold text-gray-600">No employees found</p>
+                          <p className="text-gray-500 mt-1">No employee data available for {selectedYear}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        {/* Single Employee Dialog */}
+        <Dialog open={isSingleDialog} onOpenChange={setIsSingleDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                {editingEntitlement ? (editingEntitlement.leaves.length > 0 ? `Edit Quota: ${editingEntitlement.employeeName}` : `Create Quota: ${editingEntitlement.employeeName}`) : 'Add New Employee Quota'}
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Set leave days for year {selectedYear}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {!editingEntitlement && (
+                <div className="space-y-2">
+                  <Label htmlFor="employeeName" className="text-sm font-semibold text-gray-700">Employee Name</Label>
+                  <Select value={selectedNewUserId} onValueChange={setSelectedNewUserId}>
+                    <SelectTrigger className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                      <SelectValue placeholder="Select employee..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eligibleUsers.map(user => (
+                        <SelectItem key={user.id} value={String(user.id)}>
+                          {user.employeeName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </RadioGroup>
+              )}
+              {Object.entries(LEAVE_TYPES).map(([key, name]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key} className="text-sm font-semibold text-gray-700">{name}</Label>
+                  <Input
+                    id={key}
+                    type="number"
+                    value={formState[key] || 0}
+                    onChange={(e) => handleFormChange(key, e.target.value)}
+                    min="0"
+                    disabled={isSaving}
+                    className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              ))}
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setIsBulkDialog(false)}>ยกเลิก</Button>
-            <Button onClick={handleBulkCreate} disabled={pendingEmployeesCount === 0}>
-              {pendingEmployeesCount > 0 ? `ยืนยันและสร้าง ${pendingEmployeesCount} โควต้า` : 'ไม่พบพนักงานให้สร้าง'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-3">
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={isSaving}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle>
-            <AlertDialogDescription>
-              คุณแน่ใจหรือไม่ที่จะลบโควต้าของ {toDelete?.employeeName} ในปี {toDelete?.year} การกระทำนี้ไม่สามารถย้อนกลับได้
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">ยืนยัน</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Bulk Create Dialog */}
+        <Dialog open={isBulkDialog} onOpenChange={setIsBulkDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                🚀 Create Leave Quotas for {selectedYear}
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Set standard quotas for {pendingEmployeesCount} employees without data in selected year
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-6">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-gray-700">1. Set Standard Leave Days</Label>
+                <div className="space-y-3">
+                  {Object.entries(LEAVE_TYPES).map(([key, name]) => (
+                    <div key={key} className="space-y-2">
+                      <Label htmlFor={`bulk-${key}`} className="text-sm font-medium text-gray-700">{name}</Label>
+                      <Input
+                        id={`bulk-${key}`}
+                        type="number"
+                        value={bulkFormState[key]}
+                        onChange={(e) => handleBulkFormChange(key, e.target.value)}
+                        min="0"
+                        disabled={isSaving}
+                        className="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-gray-700">2. Target Employees</Label>
+                <RadioGroup defaultValue="all-pending" disabled>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all-pending" id="r1" />
+                    <Label htmlFor="r1">All employees without quota ({pendingEmployeesCount} people)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+            <DialogFooter className="gap-3">
+              <Button variant="outline" onClick={() => setIsBulkDialog(false)} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBulkCreate} 
+                disabled={pendingEmployeesCount === 0 || isSaving}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  pendingEmployeesCount > 0 ? `Create ${pendingEmployeesCount} Quotas` : 'No Employees to Create'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!toDelete} onOpenChange={() => setToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-bold text-gray-900">
+                Confirm Delete
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-600">
+                Are you sure you want to delete {toDelete?.employeeName}'s quota for {toDelete?.year}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-3">
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDelete} 
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Confirm Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
