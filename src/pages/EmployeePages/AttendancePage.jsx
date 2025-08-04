@@ -4,12 +4,38 @@ import { useEffect, useState } from "react";
 import employeeApi from "@/src/api/employeeApi";
 import { useNavigate } from "react-router";
 import useUserStore from "@/src/stores/useUserStore";
-import fetchAllholiday from "@/src/api/employeeApi";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  Calendar,
+  Clock,
+  User,
+  Building,
+  MapPin,
+  TrendingUp,
+  Download,
+  Filter,
+} from "lucide-react";
 
 // --- ฟังก์ชันแปลงชั่วโมงทศนิยมเป็นชั่วโมง:นาที ---
 // เช่น 8.5 → "8:30", 9.25 → "9:15"
 function toHourMinute(decimalHour) {
-  if (typeof decimalHour !== "number" || isNaN(decimalHour) || decimalHour <= 0) return "0:00";
+  if (typeof decimalHour !== "number" || isNaN(decimalHour) || decimalHour <= 0)
+    return "0:00";
   const hour = Math.floor(decimalHour);
   const min = Math.round((decimalHour - hour) * 60);
   return `${hour}:${min.toString().padStart(2, "0")}`;
@@ -38,83 +64,10 @@ function calcHourDiff(start, end) {
   // start, end รูปแบบ "08:30", "17:30"
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
-  let diff = (eh * 60 + em) - (sh * 60 + sm); // นาที
+  let diff = eh * 60 + em - (sh * 60 + sm); // นาที
   if (diff < 0) diff += 24 * 60; // ข้ามวัน (ไม่น่าเจอ)
   return (diff / 60).toFixed(2);
 }
-// --- ฟังก์ชันสร้างวันที่ในเดือน ---
-function generateDaysOfMonth(year, month) {
-  const days = [];
-  const daysInMonth = dayjs(`${year}-${month + 1}-01`).daysInMonth();
-  for (let d = 1; d <= daysInMonth; d++) {
-    days.push(dayjs(`${year}-${month + 1}-${d}`).format("YYYY-MM-DD"));
-  }
-  return days;
-}
-
-// --- ฟังก์ชันรวม Attendance + Holiday + Row  เรียกใช้เริ่มตั้งแต่วันที่ 1 ของเดือน ---
-// function buildAttendanceRows({
-//   attendances,
-//   holidays,
-//   year,
-//   month,
-//   userName = "",
-//   department = "-",
-//   position = "-",
-// }) {
-//   const days = generateDaysOfMonth(year, month);
-
-//   // Attendance map
-//   const attMap = {};
-//   attendances.forEach(att => attMap[att.date] = att);
-
-//   // Holiday map
-//   const holidayMap = {};
-//   holidays.forEach(h => holidayMap[h.date] = h.name);
-
-//   return days.map(date => {
-//     const d = dayjs(date);
-//     const weekday = d.format("dd"); // เช่น 'จ.' (Mon), 'อ.' (Tue)
-//     const displayDate = d.format("DD/MM/YY") + " " + weekday;
-
-//     const isWeekend = [0, 6].includes(d.day());
-//     const holidayName = holidayMap[date];
-
-//     const att = attMap[date];
-
-//     let summary = "";
-//     if (holidayName) summary = holidayName;
-//     else if (isWeekend) summary = "วันหยุด";
-//     else if (!att) summary = "ขาดงาน";
-//     else if (att.isAbsent) summary = "ขาดงาน";
-//     else if (att.isLate) summary = "มาสาย";
-//     else summary = "ปกติ";
-
-//     // เวลาทำงาน
-//     const workPlan = "08:00";
-//     const workDiff = att
-//       ? `${att.totalHours < 8 ? "-" : ""}${Math.abs(8 - att.totalHours).toFixed(2)}`
-//       : "-08:00";
-
-//     return {
-//       name: userName,
-//       department,
-//       position,
-//       date: displayDate,
-//       checkin_plan: "08:00",
-//       checkin_actual: att?.clockIn || "",
-//       checkin_note: att?.isLate ? `มาสาย ${att.lateMinutes} นาที` : "",
-//       checkout_plan: "17:00",
-//       checkout_actual: att?.clockOut || "",
-//       checkout_note: "",
-//       work_plan: "08:00",
-//       work_actual: att ? att.totalHours.toFixed(2) : "00:00",
-//       work_diff: att ? workDiff : "-08:00",
-//       summary,
-//     };
-//   });
-// }
-
 // --- ฟังก์ชันรวม Attendance + Holiday + Row เรียกใช้เริ่มตั้งแต่วันแรกที่เข้าทำงาน ---
 function buildAttendanceRows({
   attendances,
@@ -128,15 +81,16 @@ function buildAttendanceRows({
   checkoutPlan = "-",
   workPlanHour = "-",
 }) {
-  const attendanceDates = attendances.map(att => att.date);
+  const attendanceDates = attendances.map((att) => att.date);
   const monthStart = dayjs(`${year}-${String(month + 1).padStart(2, "0")}-01`);
   const monthEnd = monthStart.endOf("month");
   const today = dayjs();
 
   // หา firstWorkDate ตาม logic เดิม
-  const firstWorkDate = attendanceDates.length > 0
-    ? attendanceDates.reduce((min, curr) => (curr < min ? curr : min))
-    : null;
+  const firstWorkDate =
+    attendanceDates.length > 0
+      ? attendanceDates.reduce((min, curr) => (curr < min ? curr : min))
+      : null;
 
   // ข้ามเดือนที่ยังไม่เริ่มงาน
   if (firstWorkDate && dayjs(firstWorkDate).isAfter(monthEnd)) return [];
@@ -147,7 +101,10 @@ function buildAttendanceRows({
 
   // *** set endDay ให้เป็น min(monthEnd, today)
   let endDay = monthEnd;
-  if (today.isBefore(monthEnd, "day") && today.isAfter(monthStart.subtract(1, "day"))) {
+  if (
+    today.isBefore(monthEnd, "day") &&
+    today.isAfter(monthStart.subtract(1, "day"))
+  ) {
     endDay = today;
   }
 
@@ -158,11 +115,11 @@ function buildAttendanceRows({
   }
 
   const attMap = {};
-  attendances.forEach(att => attMap[att.date] = att);
+  attendances.forEach((att) => (attMap[att.date] = att));
   const holidayMap = {};
-  holidays.forEach(h => holidayMap[h.date] = h.name);
+  holidays.forEach((h) => (holidayMap[h.date] = h.name));
 
-  return days.map(date => {
+  return days.map((date) => {
     const d = dayjs(date);
     const weekday = d.format("dd");
     const displayDate = d.format("DD/MM/YY") + " " + weekday;
@@ -171,7 +128,6 @@ function buildAttendanceRows({
     const att = attMap[date];
     const hasClockIn = att?.clockIn && att.clockIn !== "";
     const hasClockOut = att?.clockOut && att.clockOut !== "";
-
 
     // กำหนด summary
     let summary = "";
@@ -183,12 +139,25 @@ function buildAttendanceRows({
     let workDiff = "-";
     let workActual = "0:00";
 
-    if (att && !att.isAbsent && hasClockIn && hasClockOut && workPlanHour !== "-" && !isNaN(Number(att.totalHours)) && !isNaN(Number(workPlanHour))) {
+    if (
+      att &&
+      !att.isAbsent &&
+      hasClockIn &&
+      hasClockOut &&
+      workPlanHour !== "-" &&
+      !isNaN(Number(att.totalHours)) &&
+      !isNaN(Number(workPlanHour))
+    ) {
       // กรณีมีเวลาเข้า-ออกครบ (และไม่ขาดงาน)
       const diff = parseFloat(att.totalHours) - parseFloat(workPlanHour);
       workDiff = diff > 0 ? toHourMinute(diff) : "0:00";
       workActual = toHourMinute(att.totalHours);
-    } else if (att && !att.isAbsent && (hasClockIn || hasClockOut) && !isNaN(Number(att.totalHours))) {
+    } else if (
+      att &&
+      !att.isAbsent &&
+      (hasClockIn || hasClockOut) &&
+      !isNaN(Number(att.totalHours))
+    ) {
       // กรณีมี clockin หรือ clockout ฝั่งเดียว (ถือว่ายังไม่จบวัน/Incomplete)
       workActual = toHourMinute(att.totalHours);
       workDiff = "-";
@@ -218,8 +187,18 @@ function buildAttendanceRows({
 
 // --- กำหนดเดือนและปีปัจจุบัน ---
 const months = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+  "มกราคม",
+  "กุมภาพันธ์",
+  "มีนาคม",
+  "เมษายน",
+  "พฤษภาคม",
+  "มิถุนายน",
+  "กรกฎาคม",
+  "สิงหาคม",
+  "กันยายน",
+  "ตุลาคม",
+  "พฤศจิกายน",
+  "ธันวาคม",
 ];
 const currentMonth = dayjs().month(); // 0-11
 const currentYear = dayjs().year();
@@ -243,18 +222,21 @@ function AttendancePage() {
   const [holidays, setHolidays] = useState([]);
 
   async function fetchAllholiday() {
-    const res = await employeeApi.fetchAllholiday(selectedMonth + 1, selectedYear); 
+    const res = await employeeApi.fetchAllholiday(
+      selectedMonth + 1,
+      selectedYear
+    );
     setHolidays(res.data.holiday);
     return res.data.holiday || [];
   }
 
-
   useEffect(() => {
-    fetchAllholiday()
+    fetchAllholiday();
 
     if (user?.id) {
-      employeeApi.getMyProfile(user.id)
-        .then(res => setProfile(res.data.employeeProfile || res.data))
+      employeeApi
+        .getMyProfile(user.id)
+        .then((res) => setProfile(res.data.employeeProfile || res.data))
         .catch(() => setProfile(null));
     }
     if (!user || !accessToken) {
@@ -262,11 +244,13 @@ function AttendancePage() {
     }
     if (!userId) return;
     setLoading(true);
-    employeeApi.getAttendance(userId, selectedMonth + 1, selectedYear)
-      .then(res => {
+    employeeApi
+      .getAttendance(userId, selectedMonth + 1, selectedYear)
+      .then((res) => {
         setAttendances(res.data.attendances || []);
       })
-      .catch(err => {
+      .catch((err) => {
+        console.error("Error fetching attendance:", err);
         setAttendances([]);
       })
       .finally(() => setLoading(false));
@@ -284,53 +268,279 @@ function AttendancePage() {
       checkoutPlan = profile.workPolicy.endTime;
     }
     workPlanHour = calcHourDiff(checkinPlan, checkoutPlan);
-
   }
-  // --- Gen ข้อมูล row ---
+
+  // สร้างข้อมูลสำหรับตาราง
+  // ใช้ข้อมูลจาก attendance response ถ้ามี ไม่งั้นใช้จาก user store
+  const userFromAttendance =
+    attendances.length > 0 ? attendances[0].user : null;
+  const displayName = userFromAttendance
+    ? `${userFromAttendance.firstName} ${userFromAttendance.lastName}`
+    : user
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.name || ""
+    : "";
+
   const data = buildAttendanceRows({
     attendances,
-    holidays: holidays || [],
+    holidays,
     year: selectedYear,
     month: selectedMonth,
-    userName: user?.name || "-",
+    userName: displayName,
     department: user?.department || "-",
-    position: user?.role || "-",
+    position: user?.position || user?.role || "-",
     checkinPlan,
     checkoutPlan,
     workPlanHour,
   });
 
+  // คำนวณสถิติการทำงาน
+  const calculateStats = () => {
+    const workDays = data.filter(
+      (row) =>
+        !row.summary.includes("วันหยุด") &&
+        !row.summary.includes("วันลา") &&
+        row.summary !== "ขาดงาน"
+    );
+
+    const lateDays = data.filter((row) => row.summary === "มาสาย").length;
+    const absentDays = data.filter((row) => row.summary === "ขาดงาน").length;
+    const normalDays = workDays.filter((row) => row.summary === "ปกติ").length;
+    const incompleteDays = data.filter(
+      (row) => row.summary === "ยังไม่ครบวัน"
+    ).length;
+
+    // คำนวณเวลาทำงานรวม
+    const totalWorkHours = data.reduce((sum, row) => {
+      if (row.work_actual && row.work_actual !== "0:00") {
+        const [hours, minutes] = row.work_actual.split(":").map(Number);
+        return sum + hours + minutes / 60;
+      }
+      return sum;
+    }, 0);
+
+    return {
+      totalDays: data.length,
+      workDays: workDays.length,
+      normalDays,
+      lateDays,
+      absentDays,
+      incompleteDays,
+      totalWorkHours: totalWorkHours.toFixed(1),
+      attendanceRate:
+        workDays.length > 0
+          ? (((normalDays + lateDays) / workDays.length) * 100).toFixed(1)
+          : 0,
+    };
+  };
+
+  const stats = calculateStats();
+
   return (
-    <div className="w-full px-2 sm:px-8 py-4 sm:py-8">
-      <div className="mx-auto max-w-[1200px]">
-        <div className="mb-6 flex flex-col gap-4">
-          <span className="text-xl font-bold text-[#30384d]">
-            ตารางบันทึกเวลาทำงาน (Attendance)
-          </span>
-          <div className="flex gap-2 items-center">
-            <span>เลือกเดือน</span>
-            <select
-              className="border rounded px-2 py-1"
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(Number(e.target.value))}
-            >
-              {months.map((m, i) => (
-                <option key={i} value={i}>{m}</option>
-              ))}
-            </select>
-            <span>ปี</span>
-            <select
-              className="border rounded px-2 py-1"
-              value={selectedYear}
-              onChange={e => setSelectedYear(Number(e.target.value))}
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>{y + 543}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <AttendanceTable data={data} />
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-100 p-6">
+      <div className="w-full max-w-7xl mx-auto">
+        <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm pt-0">
+          <CardHeader className="text-center pb-8 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-t-lg py-4">
+            <div className="flex items-center justify-center mb-4">
+              <Clock className="h-8 w-8 mr-3" />
+              <CardTitle className="text-3xl font-bold">
+                ตารางบันทึกเวลาทำงาน
+              </CardTitle>
+            </div>
+            <CardDescription className="text-teal-100 text-lg">
+              ติดตามและจัดการเวลาทำงานของคุณ พร้อมสถิติการเข้างาน
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-8">
+            {/* ข้อมูลพนักงาน */}
+            <div className="mb-8 p-6 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border border-teal-200">
+              <h3 className="text-lg font-semibold text-teal-800 mb-4 flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                ข้อมูลพนักงาน
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center space-x-3">
+                  <Badge
+                    variant="outline"
+                    className="bg-white text-teal-700 border-teal-300"
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    {userFromAttendance
+                      ? `${userFromAttendance.firstName} ${userFromAttendance.lastName}`
+                      : user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.name || "ไม่ระบุชื่อ"}
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge
+                    variant="outline"
+                    className="bg-white text-teal-700 border-teal-300"
+                  >
+                    <Building className="h-4 w-4 mr-1" />
+                    {user?.department || "ไม่ระบุแผนก"}
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge
+                    variant="outline"
+                    className="bg-white text-teal-700 border-teal-300"
+                  >
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {user?.position || user?.role || "ไม่ระบุตำแหน่ง"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* เวลาทำงาน */}
+              {profile && (
+                <div className="mt-4 pt-4 border-t border-teal-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-teal-600">
+                        เวลาเข้างาน:
+                      </span>
+                      <Badge className="bg-teal-100 text-teal-800">
+                        {checkinPlan}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-teal-600">เวลาออกงาน:</span>
+                      <Badge className="bg-teal-100 text-teal-800">
+                        {checkoutPlan}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-teal-600">
+                        ชั่วโมงทำงาน:
+                      </span>
+                      <Badge className="bg-teal-100 text-teal-800">
+                        {workPlanHour} ชม.
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* สถิติการทำงาน */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-teal-600" />
+                สถิติการทำงานประจำเดือน
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{stats.totalDays}</div>
+                  <div className="text-sm text-blue-100">วันทั้งหมด</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{stats.normalDays}</div>
+                  <div className="text-sm text-green-100">วันปกติ</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{stats.lateDays}</div>
+                  <div className="text-sm text-yellow-100">วันมาสาย</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">{stats.absentDays}</div>
+                  <div className="text-sm text-red-100">วันขาดงาน</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">
+                    {stats.totalWorkHours}
+                  </div>
+                  <div className="text-sm text-purple-100">ชม.ทำงาน</div>
+                </div>
+
+                <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold">
+                    {stats.attendanceRate}%
+                  </div>
+                  <div className="text-sm text-teal-100">อัตราเข้างาน</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ตัวกรองและเครื่องมือ */}
+            <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium text-gray-700">
+                      กรองข้อมูล:
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-teal-600" />
+                    <span className="text-sm text-gray-600">เดือน:</span>
+                    <Select
+                      value={selectedMonth.toString()}
+                      onValueChange={(v) => setSelectedMonth(Number(v))}
+                    >
+                      <SelectTrigger className="w-[140px] border-teal-200 focus:border-teal-400">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((m, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {m}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-teal-600" />
+                    <span className="text-sm text-gray-600">ปี:</span>
+                    <Select
+                      value={selectedYear.toString()}
+                      onValueChange={(v) => setSelectedYear(Number(v))}
+                    >
+                      <SelectTrigger className="w-[100px] border-teal-200 focus:border-teal-400">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((y) => (
+                          <SelectItem key={y} value={y.toString()}>
+                            {y + 543}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="border-teal-300 text-teal-700 hover:bg-teal-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  ส่งออกรายงาน
+                </Button>
+              </div>
+            </div>
+
+            {/* ตารางข้อมูล */}
+            <div className="rounded-lg border border-gray-200 overflow-hidden shadow-sm bg-white">
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
+                </div>
+              ) : (
+                <AttendanceTable data={data} />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
