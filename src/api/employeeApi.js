@@ -1,16 +1,14 @@
 import { privateApi } from "./baseApi";
 
 const employeeApi = {
-  getProfile: (userId) => {
-    return privateApi.get(`/profiles/${userId}`);
-  },
-
   getAttendance: (userId, month, year) => {
-    return privateApi.get(`/attendances/${userId}`, {
-      params: { month, year },
+    return privateApi.get(`/attendance`, {
+      params: { userId, month, year },
     });
   },
-
+  fetchAllholiday: () => {
+    return privateApi.get("/holidays")
+  },
 
   postLeaveRequest: (leaveData) => privateApi.post('/leaves', leaveData),
   getLeaveRequests: () => privateApi.get('/leaves/user'),

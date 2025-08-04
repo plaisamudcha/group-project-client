@@ -12,7 +12,7 @@ const useEmployeeStore = create(
       fetchProfile: async (userId) => {
         set({ loading: true, error: null });
         try {
-          const res = await employeeApi.getProfile(userId);
+          const res = await employeeApi.getMyProfile(userId);
           set({ profile: res.data, loading: false });
         } catch (err) {
           set({ error: err.message || "เกิดข้อผิดพลาด", loading: false });
