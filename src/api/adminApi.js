@@ -75,6 +75,8 @@ const admintoApi = {
   //Attendances APIs
   getAllAttendance: () => {
     return privateApi.get("/attendance/all");
+  },  assignPolicy: (assignData) => {
+    return privateApi.post("/work-policies/assign", assignData);
   }
 };
 
