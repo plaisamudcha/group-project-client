@@ -23,8 +23,7 @@ export function UserNav() {
   };
 
   // ดึง Role ปัจจุบันเพื่อกำหนด path ของหน้า Profile
-  const profilePath = user?.role === 'EMPLOYEE' ? '/employee/profile' : '/admin/profile';
-
+  const profilePath =  '/employee' 
   return (
     <div className="ml-auto">
       <DropdownMenu>
@@ -52,7 +51,7 @@ export function UserNav() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate(profilePath)}>
             <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>Personal dashboard</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>

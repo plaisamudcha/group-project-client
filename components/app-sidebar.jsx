@@ -98,8 +98,51 @@ const adminMenu = {
           color: "text-gray-600"
         },
       ],
+    },{
+      title: "Employee Portal",
+      url: "#",
+      icon: Building2,
+      items: [
+        {
+          title: "Dashboard",
+          url: "/employee",
+          icon: Home,
+          color: "text-blue-600"
+        },
+        {
+          title: "My Profile",
+          url: "/employee/profile",
+          icon: User,
+          color: "text-green-600"
+        },
+        {
+          title: "My Attendance",
+          url: "/employee/attendance",
+          icon: Clock,
+          color: "text-purple-600"
+        },
+        {
+          title: "Request Leave",
+          url: "/employee/request-leave",
+          icon: SendHorizontal,
+          color: "text-orange-600"
+        },
+        {
+          title: "My Leave Request",
+          url: "/employee/leave-requests",
+          icon: FileText,
+          color: "text-pink-600"
+        },
+        {
+          title: "Company Holidays",
+          url: "/employee/holidays",
+          icon: Calendar,
+          color: "text-red-600"
+        },
+      ],
     },
   ],
+  
 };
 
 const employeeMenu = {
