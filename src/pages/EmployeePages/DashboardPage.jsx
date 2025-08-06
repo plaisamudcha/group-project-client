@@ -35,12 +35,117 @@ import {
   Users,
   Building,
   Home,
+  CheckCircle2,
+  Info,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import employeeApi from "@/src/api/employeeApi";
 import { Link } from "react-router";
 import { translateLeaveType } from "@/lib/translateLeaveType";
 import useUserStore from "@/src/stores/useUserStore";
+
+// Toast Notification Component
+const Toast = ({ message, type = "success", onClose, isVisible }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  const typeStyles = {
+    success: {
+      bg: "bg-gradient-to-r from-green-500 to-emerald-600",
+      icon: <CheckCircle2 className="h-5 w-5 text-white" />,
+      progress: "bg-green-300",
+    },
+    error: {
+      bg: "bg-gradient-to-r from-red-500 to-pink-600",
+      icon: <XCircle className="h-5 w-5 text-white" />,
+      progress: "bg-red-300",
+    },
+    info: {
+      bg: "bg-gradient-to-r from-blue-500 to-indigo-600",
+      icon: <Info className="h-5 w-5 text-white" />,
+      progress: "bg-blue-300",
+    },
+  };
+
+  const style = typeStyles[type];
+
+  return (
+    <div
+      className={`fixed top-4 right-4 z-50 transition-all duration-500 transform ${
+        isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+      }`}
+    >
+      <div className={`${style.bg} rounded-lg shadow-2xl p-4 pr-12 min-w-[320px] max-w-md relative overflow-hidden`}>
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 bg-white/20 rounded-full p-2 backdrop-blur-sm">
+            {style.icon}
+          </div>
+          <p className="text-white font-medium text-sm flex-1">{message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-white/80 hover:text-white transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        {/* Progress bar animation */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10">
+          <div 
+            className={`h-full ${style.progress} transition-all duration-[5000ms] ease-linear`}
+            style={{
+              width: isVisible ? "0%" : "100%",
+              transition: isVisible ? "width 5s linear" : "none"
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Success Animation Modal
+const SuccessModal = ({ isOpen, onClose, type }) => {
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="relative">
+        {/* Ripple effect */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-32 h-32 bg-green-400 rounded-full animate-ping opacity-20" />
+          <div className="absolute w-24 h-24 bg-green-500 rounded-full animate-ping opacity-30 animation-delay-200" />
+        </div>
+        {/* Main icon */}
+        <div className="relative bg-white rounded-full p-8 shadow-2xl transform transition-all duration-500 scale-100 animate-bounce-in">
+          {type === "checkin" ? (
+            <LogIn className="h-16 w-16 text-green-600" />
+          ) : (
+            <LogOut className="h-16 w-16 text-red-600" />
+          )}
+          <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
+            <CheckCircle2 className="h-5 w-5 text-white" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export function DashboardPage() {
   const user = useUserStore((state) => state.user);
@@ -54,6 +159,28 @@ export function DashboardPage() {
   const [attendance, setAttendance] = useState(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  
+  // Toast states
+  const [toast, setToast] = useState({
+    isVisible: false,
+    message: "",
+    type: "success",
+  });
+  
+  // Success modal state
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    type: null,
+  });
+
+  // Toast helper function
+  const showToast = (message, type = "success") => {
+    setToast({ isVisible: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -118,6 +245,10 @@ export function DashboardPage() {
     setIsCheckingIn(true);
     try {
       await employeeApi.clockIn();
+      
+      // Show success animation
+      setSuccessModal({ isOpen: true, type: "checkin" });
+      
       // รีเฟรชข้อมูลการเข้างาน
       const today = new Date();
       const currentMonth = today.getMonth() + 1;
@@ -133,13 +264,17 @@ export function DashboardPage() {
       });
       setAttendance(todayAttendance || null);
 
-      // แสดงข้อความสำเร็จ
-      alert("บันทึกเวลาเข้างานสำเร็จ!");
+      // Show toast notification
+      const currentTime = new Date().toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      showToast(`✅ บันทึกเวลาเข้างานสำเร็จ เวลา ${currentTime}`, "success");
     } catch (err) {
       console.error("Check-in failed:", err);
-      alert(
-        "ไม่สามารถบันทึกเวลาเข้างานได้: " +
-          (err.response?.data?.message || err.message)
+      showToast(
+        `❌ ไม่สามารถบันทึกเวลาเข้างานได้: ${err.response?.data?.message || err.message}`,
+        "error"
       );
     } finally {
       setIsCheckingIn(false);
@@ -150,6 +285,10 @@ export function DashboardPage() {
     setIsCheckingOut(true);
     try {
       await employeeApi.clockOut();
+      
+      // Show success animation
+      setSuccessModal({ isOpen: true, type: "checkout" });
+      
       // รีเฟรชข้อมูลการเข้างาน
       const today = new Date();
       const currentMonth = today.getMonth() + 1;
@@ -165,13 +304,21 @@ export function DashboardPage() {
       });
       setAttendance(todayAttendance || null);
 
-      // แสดงข้อความสำเร็จ
-      alert("บันทึกเวลาออกงานสำเร็จ!");
+      // Show toast notification with work hours
+      const currentTime = new Date().toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const totalHours = todayAttendance?.totalHours?.toFixed(2) || "0";
+      showToast(
+        `✅ บันทึกเวลาออกงานสำเร็จ เวลา ${currentTime} (ทำงาน ${totalHours} ชม.)`,
+        "success"
+      );
     } catch (err) {
       console.error("Check-out failed:", err);
-      alert(
-        "ไม่สามารถบันทึกเวลาออกงานได้: " +
-          (err.response?.data?.message || err.message)
+      showToast(
+        `❌ ไม่สามารถบันทึกเวลาออกงานได้: ${err.response?.data?.message || err.message}`,
+        "error"
       );
     } finally {
       setIsCheckingOut(false);
@@ -273,6 +420,21 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-6">
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
+      
+      {/* Success Animation Modal */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        type={successModal.type}
+        onClose={() => setSuccessModal({ isOpen: false, type: null })}
+      />
+
       <div className="w-full max-w-7xl mx-auto">
         <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm pt-0">
           <CardHeader className="text-center pb-8 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg py-4">
@@ -344,18 +506,22 @@ export function DashboardPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Check-in Card */}
-                <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+                <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6 text-center">
                     <LogIn className="h-12 w-12 text-green-600 mx-auto mb-4" />
                     <h4 className="text-lg font-semibold text-green-800 mb-2">
                       เข้างาน
                     </h4>
                     {attendance?.clockIn ? (
-                      <div>
+                      <div className="space-y-2">
                         <p className="text-green-600 mb-2">เข้างานแล้วเมื่อ</p>
                         <Badge className="bg-green-100 text-green-800 text-lg px-4 py-2">
                           {attendance.clockIn}
                         </Badge>
+                        <div className="mt-3 inline-flex items-center text-sm text-green-700">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          บันทึกเรียบร้อย
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -363,7 +529,7 @@ export function DashboardPage() {
                         <Button
                           onClick={handleCheckIn}
                           disabled={isCheckingIn}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white transition-all duration-300 hover:scale-105"
                         >
                           {isCheckingIn ? (
                             <>
@@ -383,18 +549,22 @@ export function DashboardPage() {
                 </Card>
 
                 {/* Check-out Card */}
-                <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50">
+                <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6 text-center">
                     <LogOut className="h-12 w-12 text-red-600 mx-auto mb-4" />
                     <h4 className="text-lg font-semibold text-red-800 mb-2">
                       ออกงาน
                     </h4>
                     {attendance?.clockOut ? (
-                      <div>
+                      <div className="space-y-2">
                         <p className="text-red-600 mb-2">ออกงานแล้วเมื่อ</p>
                         <Badge className="bg-red-100 text-red-800 text-lg px-4 py-2">
                           {attendance.clockOut}
                         </Badge>
+                        <div className="mt-3 inline-flex items-center text-sm text-red-700">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          บันทึกเรียบร้อย
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -402,7 +572,7 @@ export function DashboardPage() {
                         <Button
                           onClick={handleCheckOut}
                           disabled={isCheckingOut || !attendance?.clockIn}
-                          className="w-full bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-300"
+                          className="w-full bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-300 transition-all duration-300 hover:scale-105 disabled:scale-100"
                         >
                           {isCheckingOut ? (
                             <>
@@ -655,6 +825,31 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add custom CSS for animations */}
+      <style jsx>{`
+        @keyframes bounce-in {
+          0% {
+            transform: scale(0);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        
+        .animate-bounce-in {
+          animation: bounce-in 0.5s ease-out;
+        }
+        
+        .animation-delay-200 {
+          animation-delay: 200ms;
+        }
+      `}</style>
     </div>
   );
 }
