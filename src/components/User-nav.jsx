@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 import { useNavigate } from "react-router";
-import useUserStore from '../stores/useUserStore'; // <-- แก้ไข path ให้ถูกต้อง
+import useUserStore from "../stores/useUserStore"; // <-- แก้ไข path ให้ถูกต้อง
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User } from "lucide-react";
+import Time from "./Time";
 
 export function UserNav() {
   const navigate = useNavigate();
@@ -19,20 +20,26 @@ export function UserNav() {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // กลับไปหน้าหลักหลังจาก Logout
+    navigate("/"); // กลับไปหน้าหลักหลังจาก Logout
   };
 
   // ดึง Role ปัจจุบันเพื่อกำหนด path ของหน้า Profile
-  const profilePath =  '/employee' 
+  const profilePath = "/employee";
   return (
-    <div className="ml-auto">
+    <div className="ml-auto flex items-center space-x-4">
+      {/* Time Component in the center */}
+      <Time />
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:opacity-80">
+          <Button
+            variant="ghost"
+            className="relative h-10 w-10 rounded-full hover:opacity-80"
+          >
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.profileImage} alt="User Avatar" />
               <AvatarFallback className="bg-primary text-primary-foreground">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
           </Button>
