@@ -319,7 +319,7 @@ export function DashboardPage() {
                 </div>
 
                 {/* เวลาปัจจุบันและการเข้างาน */}
-                <div>
+                <div className="flex flex-col justify-center items-center">
                   <h3 className="text-lg font-semibold text-indigo-800 mb-4 flex items-center">
                     <Clock className="h-5 w-5 mr-2" />
                     เวลาปัจจุบัน
