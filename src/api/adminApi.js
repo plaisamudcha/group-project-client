@@ -30,6 +30,17 @@ const admintoApi = {
   getAllUser: () => {
     return privateApi.get('/users')
   },
+  createUser: (userData) => {
+    return privateApi.post('/users', userData);
+  },
+  updateUser: (id, userData) => {
+    return privateApi.put(`/users/${id}`, userData);
+  },
+
+  // --- 👇👇👇 เพิ่มฟังก์ชันใหม่ที่นี่ 👇👇👇 ---
+  deleteUser: (id) => {
+    return privateApi.delete(`/users/${id}`);
+  },
 
   // Annual Leave APIs
   createEntitlements: (payload) => {
