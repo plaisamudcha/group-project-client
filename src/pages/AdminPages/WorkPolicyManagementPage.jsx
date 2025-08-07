@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from 'react-toastify';
 import { Pencil, UserPlus, Clock, Users, Shield, Plus, Search, CheckCircle2, AlertCircle, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import admintoApi from "@/src/api/adminApi";
@@ -48,7 +49,7 @@ function WorkPolicyManagementPage() {
       setPolicies(response.data.policies || response.data || [])
     } catch (error) {
       console.error("Error fetching policies:", error)
-      alert("ไม่สามารถดึงข้อมูล policies ได้")
+      toast.error("ไม่สามารถดึงข้อมูล policies ได้")
     } finally {
       setLoading(false)
     }
@@ -71,7 +72,7 @@ function WorkPolicyManagementPage() {
       setEmployees(employeesData)
     } catch (error) {
       console.error("Error fetching employees:", error)
-      alert("ไม่สามารถดึงข้อมูล employees ได้")
+      toast.error("ไม่สามารถดึงข้อมูล employees ได้")
     }
   }
 
@@ -94,17 +95,17 @@ function WorkPolicyManagementPage() {
 
       if (editingPolicy) {
         await admintoApi.updatePolicy(editingPolicy.id, dataToSend)
-        alert("อัพเดท Policy สำเร็จ!")
+        toast.success("อัพเดท Policy สำเร็จ!")
       } else {
         await admintoApi.createPolicy(dataToSend)
-        alert("สร้าง Policy สำเร็จ!")
+        toast.success("สร้าง Policy สำเร็จ!")
       }
       
       await fetchPolicies()
       handleCancel()
     } catch (error) {
       console.error("Error saving policy:", error)
-      alert(`เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message}`)
+      toast.error(error.response?.data?.message || error.message || "ไม่สามารถบันทึก Policy ได้")
     } finally {
       setSubmitLoading(false)
     }
@@ -117,7 +118,7 @@ function WorkPolicyManagementPage() {
 
   const handleAssignSubmit = async () => {
     if (!selectedPolicy || selectedEmployees.length === 0) {
-      alert("กรุณาเลือก employee อย่างน้อย 1 คน")
+      toast.warn("กรุณาเลือก employee อย่างน้อย 1 คน")
       return
     }
 
@@ -139,27 +140,28 @@ function WorkPolicyManagementPage() {
       setSelectedEmployees([])
       setSearchEmployee('')
       
-      alert(`มอบหมาย Policy "${selectedPolicy.name}" ให้กับ ${selectedEmployeeNames.length} คน สำเร็จ!\n\n${selectedEmployeeNames.join('\n')}`)
+      toast.success(`มอบหมาย Policy "${selectedPolicy.name}" ให้กับ ${selectedEmployeeNames.length} คน สำเร็จ!`)
     } catch (error) {
       console.error("Error assigning policy:", error)
-      alert(`เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message}`)
+      toast.error(error.response?.data?.message || error.message || "ไม่สามารถมอบหมาย Policy ได้")
     } finally {
       setSubmitLoading(false)
     }
   }
 
   const handleDeletePolicy = async (policyId) => {
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบ Policy นี้?")) {
+    // ใช้ confirm dialog แทน alert สำหรับการยืนยัน
+    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบ Policy นี้?")) {
       return
     }
 
     try {
       await admintoApi.deletePolicy(policyId)
-      alert("ลบ Policy สำเร็จ!")
+      toast.success("ลบ Policy สำเร็จ!")
       await fetchPolicies()
     } catch (error) {
       console.error("Error deleting policy:", error)
-      alert(`เกิดข้อผิดพลาด: ${error.response?.data?.message || error.message}`)
+      toast.error(error.response?.data?.message || error.message || "ไม่สามารถลบ Policy ได้")
     }
   }
 
@@ -641,7 +643,7 @@ function WorkPolicyManagementPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Assign Policy Dialog - แก้ไข checkbox event handling */}
+        {/* Assign Policy Dialog */}
         <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
           <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
@@ -715,7 +717,7 @@ function WorkPolicyManagementPage() {
                             }`}
                           onClick={() => handleEmployeeToggle(employee.id)}
                         >
-                          {/* Checkbox - แก้ไข event handling */}
+                          {/* Checkbox */}
                           <div className="flex items-center justify-center w-5 h-5 mr-3" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
